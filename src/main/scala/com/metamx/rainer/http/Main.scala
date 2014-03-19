@@ -47,9 +47,6 @@ object Main
     val keeper = new CommitKeeper[DictValue](curator, configs.apply[RainerCuratorConfig].diaryPath)
     val servlet = new RainerServlet[DictValue] {
       override def valueDeserialization = implicitly[KeyValueDeserialization[DictValue]]
-
-      override def root = "/diary"
-
       override def commitStorage = CommitStorage.keeperPublishing(storage, keeper)
     }
     val server = new Server
@@ -66,7 +63,7 @@ object Main
       new ServletContextHandler(ServletContextHandler.NO_SESSIONS) withEffect {
         context =>
           context.setContextPath("/")
-          context.addServlet(new ServletHolder(servlet), "/*")
+          context.addServlet(new ServletHolder(servlet), "/diary/*")
       }
     )
     lifecycle.addHandler(

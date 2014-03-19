@@ -22,17 +22,20 @@ import com.metamx.common.scala.Predef._
 import com.metamx.common.scala.net.uri._
 import com.metamx.common.scala.timekeeper.Timekeeper
 import com.metamx.common.scala.untyped.Dict
-import com.metamx.rainer.http.RainerServlet
+import com.metamx.rainer.http.{RainerMirrorServlet, RainerServlet}
 import com.simple.simplespec.Spec
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.http.Http
 import com.twitter.finagle.{InetResolver, Group}
 import java.util.UUID
-import org.joda.time.DateTime
 import org.junit.Test
 import org.scalatra.test.ScalatraTests
+import com.twitter.util.{Await, Witness, Var}
+import java.util.concurrent.atomic.AtomicReference
+import org.scala_tools.time.Imports._
 
-class ServletTest extends Spec
+
+class ServletTest extends Spec with RainerTests
 {
 
   class StandaloneTests
@@ -309,6 +312,41 @@ class ServletTest extends Spec
     }
   }
 
+  class MirrorTests {
+    @Test
+    def testGetMirror() {
+      executeMirror {
+        tester =>
+          tester.post(
+            "/things/what/1", """{"s": "hey"}""".getBytes, Map(
+              "X-Rainer-Author" -> "dude",
+              "X-Rainer-Comment" -> "stuff"
+            )
+          ) {
+            Jackson.parse[Dict](tester.body) must be(
+              Map(
+                "key" -> "what",
+                "version" -> 1,
+                "author" -> "dude",
+                "comment" -> "stuff",
+                "mtime" -> "1970-01-01T00:00:00.002Z",
+                "empty" -> false
+              )
+            )
+            tester.status must be(200)
+          }
+
+          within(2.seconds) {
+            tester.get("/things/what") {
+              tester.body must be( """{"s": "hey"}""")
+              tester.status must be(200)
+              tester.header("X-Rainer-Cached") must be("Yes")
+            }
+          }
+      }
+    }
+  }
+
   class HttpCommitStorageTests extends CommitStorageTests {
     def makeClient[ValueType: KeyValueDeserialization](tester: ScalatraTests, suffix: String) = {
       val uri = new URI(tester.baseUrl) withPath (_.stripSuffix("/") + suffix)
@@ -340,17 +378,60 @@ class ServletTest extends Spec
     }
   }
 
+  def executeMirror(f: ScalatraTests => Unit) {
+    withCluster {
+      cluster =>
+        withCurator(cluster) {
+          curator =>
+
+            val db = new DerbyMemoryDB(UUID.randomUUID().toString)
+            db.start
+            try {
+              val keeper = new CommitKeeper[TestPayload](curator, "/zk/path")
+              val storage = CommitStorage.keeperPublishing(new DbCommitStorage[TestPayload](db, "rainer"), keeper)
+              storage.start()
+
+              val keeperMirror: Var[Map[String, Commit[TestPayload]]] = keeper.mirror()
+              val mirrorRef = new AtomicReference[Map[String, Commit[TestPayload]]]
+              val c = keeperMirror.changes.register(Witness(mirrorRef))
+
+              val servlet = new RainerServlet[TestPayload] with RainerMirrorServlet[TestPayload] {
+                override def valueDeserialization = implicitly[KeyValueDeserialization[TestPayload]]
+                override def commitStorage = storage
+                override def mirror = mirrorRef
+
+                override val timekeeper = new Timekeeper {
+                  override def now = new DateTime(2)
+                }
+              }
+              new ScalatraTests {} withEffect {
+                tests =>
+                  tests.addServlet(servlet, "/things/*")
+                  tests.start()
+                  try f(tests)
+                  finally {
+                    tests.stop()
+                  }
+              }
+              Await.result(c.close())
+            }
+            finally {
+              db.stop
+            }
+        }
+    }
+  }
+
+
   def execute(f: ScalatraTests => Unit) {
     val db = new DerbyMemoryDB(UUID.randomUUID().toString)
     db.start
     try {
       val storage = new DbCommitStorage[TestPayload](db, "rainer")
       storage.start()
+
       val servlet = new RainerServlet[TestPayload] {
-        override def root = "/things"
-
         override def valueDeserialization = implicitly[KeyValueDeserialization[TestPayload]]
-
         override def commitStorage = storage
 
         override val timekeeper = new Timekeeper {
@@ -359,7 +440,7 @@ class ServletTest extends Spec
       }
       new ScalatraTests {} withEffect {
         tests =>
-          tests.addServlet(servlet, "/*")
+          tests.addServlet(servlet, "/things/*")
           tests.start()
           try f(tests)
           finally {
