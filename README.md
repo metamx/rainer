@@ -54,7 +54,7 @@ val keeper = new CommitKeeper[ValueType](curator, "/path/in/zk")
 
 // On-demand access (synchronous ZK operations):
 val foo = keeper.get("foo")
-val allValues = keeper.heads
+val keys = keeper.keys
 
 // Create a mirror (async updates from ZK):
 val mirror: Var[Map[String, Commit[ValueType]]] = keeper.mirror()
@@ -146,7 +146,8 @@ val commit = storage.get("hey")
 
 ## Python HTTP client
 
-From Python, "pyrainer" is a convenient wrapper around the HTTP API. You can use it like this:
+From Python, "pyrainer" is a convenient wrapper around the HTTP API. You can install it with ```pip install pyrainer```
+and use it like this:
 
 ```python
 import pyrainer.http
