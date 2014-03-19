@@ -17,12 +17,12 @@
 
 package com.metamx.rainer.http
 
-import org.scalatra.{NotFound, Ok, ScalatraServlet}
-import com.metamx.rainer.Commit
-import com.metamx.common.scala.Jackson
 import com.google.common.base.Charsets
-import java.nio.charset.{CharacterCodingException, CodingErrorAction}
+import com.metamx.common.scala.Jackson
+import com.metamx.rainer.Commit
 import java.nio.ByteBuffer
+import java.nio.charset.{CharacterCodingException, CodingErrorAction}
+import org.scalatra.{NotFound, Ok, ScalatraServlet}
 
 trait RainerServletUtils {
   self: ScalatraServlet =>

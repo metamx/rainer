@@ -1,9 +1,9 @@
 package com.metamx.rainer.http
 
-import java.util.concurrent.atomic.AtomicReference
-import com.metamx.rainer.Commit
-import org.scalatra.{ActionResult, ScalatraServlet}
 import com.metamx.common.scala.Logging
+import com.metamx.rainer.Commit
+import java.util.concurrent.atomic.AtomicReference
+import org.scalatra.{ActionResult, ScalatraServlet}
 
 /**
  * Mixin trait to make [[com.metamx.rainer.http.RainerServlet]] lightnight fast

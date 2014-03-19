@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import com.metamx.common.scala.Jackson
 import com.simple.simplespec.Spec
 import com.twitter.util.Await
-
 import org.junit.Test
 import org.scala_tools.time.Imports._
 

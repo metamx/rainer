@@ -27,12 +27,12 @@ import com.simple.simplespec.Spec
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.http.Http
 import com.twitter.finagle.{InetResolver, Group}
-import java.util.UUID
-import org.junit.Test
-import org.scalatra.test.ScalatraTests
 import com.twitter.util.{Await, Witness, Var}
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
+import org.junit.Test
 import org.scala_tools.time.Imports._
+import org.scalatra.test.ScalatraTests
 
 
 class ServletTest extends Spec with RainerTests

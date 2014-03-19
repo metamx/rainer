@@ -17,14 +17,14 @@
 
 package com.metamx.rainer
 
+import com.metamx.common.scala.Logging
+import com.twitter.util.{Witness, Closable}
+import java.util.concurrent.atomic.AtomicReference
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.curator.test.TestingCluster
-import com.twitter.util.{Witness, Closable}
-import java.util.concurrent.atomic.AtomicReference
-import org.scala_tools.time.Imports._
 import org.joda.time.DateTime
-import com.metamx.common.scala.Logging
+import org.scala_tools.time.Imports._
 
 trait RainerTests extends Logging
 {

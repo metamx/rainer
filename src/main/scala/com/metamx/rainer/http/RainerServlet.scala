@@ -18,9 +18,9 @@
 package com.metamx.rainer.http
 
 import com.google.common.io.ByteStreams
+import com.metamx.common.scala.Logging
 import com.metamx.common.scala.exception._
 import com.metamx.common.scala.timekeeper.{SystemTimekeeper, Timekeeper}
-import com.metamx.common.scala.Logging
 import com.metamx.rainer.{KeyValueDeserialization, Commit, CommitStorage}
 import org.joda.time.DateTime
 import org.scalatra.{Ok, BadRequest, ScalatraServlet}
