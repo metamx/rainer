@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
   name='pyrainer',
-  version='0.13',
+  version='0.14',
   author='gian',
   author_email='gianmerlino@gmail.com',
   packages=['pyrainer'],
