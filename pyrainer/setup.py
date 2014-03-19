@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(
   name='pyrainer',
@@ -10,5 +10,5 @@ setup(
   url='https://github.com/metamx/rainer',
   description='Python client for Rainer',
   long_description=open('README.md').read(),
-  install_requires=['termcolor'],
+  install_requires=["termcolor >= 1.1.0"],
 )
