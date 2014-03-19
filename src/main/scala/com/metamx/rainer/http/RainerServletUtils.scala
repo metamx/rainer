@@ -27,7 +27,7 @@ import org.scalatra.{NotFound, Ok, ScalatraServlet}
 trait RainerServletUtils {
   self: ScalatraServlet =>
 
-  def doGet[ValueType](commitOption: Option[Commit[ValueType]]) = {
+  protected def doGet[ValueType](commitOption: Option[Commit[ValueType]]) = {
     commitOption match {
       case Some(commit) if commit.payload.isDefined =>
         Ok(
@@ -39,7 +39,7 @@ trait RainerServletUtils {
     }
   }
 
-  def doGetMeta[ValueType](commitOption: Option[Commit[ValueType]]) = {
+  protected def doGetMeta[ValueType](commitOption: Option[Commit[ValueType]]) = {
     commitOption match {
       case Some(commit) =>
         Ok(json(commit.metadata))
@@ -48,7 +48,7 @@ trait RainerServletUtils {
     }
   }
 
-  def json[A](x: A) = {
+  protected def json[A](x: A) = {
     contentType = "application/json"
     Jackson.generate(x) + "\r\n"
   }

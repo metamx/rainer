@@ -22,11 +22,11 @@ trait RainerMirrorServlet[ValueType] extends ScalatraServlet with RainerServletU
 {
   def mirror: AtomicReference[Map[String, Commit[ValueType]]]
 
-  def getMirror(key: String) = {
+  private def getMirror(key: String) = {
     mirror.get().get(key)
   }
 
-  def addHeader(res: ActionResult) = {
+  private def addHeader(res: ActionResult) = {
     res.copy(headers = res.headers + ("X-Rainer-Cached" -> "Yes"))
   }
 
