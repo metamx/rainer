@@ -4,13 +4,13 @@
 
   <groupId>com.metamx</groupId>
   <artifactId>rainer</artifactId>
-  <version>0.1.1-SNAPSHOT</version>
+  <version>0.1.1</version>
 
   <scm>
     <connection>scm:git:ssh://git@github.com/metamx/rainer.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/metamx/rainer.git</developerConnection>
     <url>http://github.com/metamx/rainer</url>
-    <tag>HEAD</tag>
+    <tag>rainer-0.1.1</tag>
   </scm>
 
   <prerequisites>
