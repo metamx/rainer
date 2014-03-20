@@ -26,39 +26,31 @@ import org.scala_tools.time.Imports._
 /**
  * Represents a key/value commit.
  *
- * @param key Key for this commit
- * @param version Version of this commit (increases by 1 for each commit)
+ * @param meta Metadata for this comment.
  * @param payload Serialized value for this commit, or None if this is a tombstone commit.
- * @param author Author for this commit. Can be any string you like!
- * @param comment Comment for this commit. Can also be any string you like!
- * @param mtime Timestamp for this commit. Should ideally be the time the commit was generated.
  * @tparam ValueType Underlying object type being committed. Should really be immutable and possess semantic equals
  *                   and hashCode methods.
  */
 class Commit[ValueType: KeyValueDeserialization](
-  val key: Commit.Key,
-  val version: Int,
-  val payload: Option[Array[Byte]],
-  val author: Commit.Author,
-  val comment: Commit.Comment,
-  val mtime: DateTime
+  val meta: CommitMetadata,
+  val payload: Option[Array[Byte]]
 ) extends Equals
 {
-  require(key.nonEmpty, "key must be nonempty")
+  require(
+    (meta.empty && payload.isEmpty) || (!meta.empty && !payload.isEmpty),
+    "meta.empty and payload.isEmpty must match"
+  )
+
+  def key = meta.key
+  def version = meta.version
+  def author = meta.author
+  def comment = meta.comment
+  def mtime = meta.mtime
 
   def value: Option[Either[Exception, ValueType]] = payload map {
     bytes =>
       implicitly[KeyValueDeserialization[ValueType]].fromKeyAndBytes(key, bytes).catchEither[Exception]
   }
-
-  def metadata: Dict = Map(
-    "key" -> key,
-    "version" -> version,
-    "author" -> author,
-    "comment" -> comment,
-    "mtime" -> mtime.toString(),
-    "empty" -> payload.isEmpty
-  )
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[Commit[_]]
 
@@ -92,24 +84,34 @@ object Commit
   type Author = String
   type Comment = String
 
-  def create[ValueType: KeyValueDeserialization](
+  def apply[ValueType: KeyValueDeserialization](
+    meta: CommitMetadata,
+    payload: Option[Array[Byte]]
+  ): Commit[ValueType] =
+  {
+    new Commit(meta, payload)
+  }
+
+  def apply[ValueType: KeyValueDeserialization](
     key: Commit.Key,
     version: Int,
     payload: Option[Array[Byte]],
     author: Commit.Author,
     comment: Commit.Comment,
     mtime: DateTime
-  ): Commit[ValueType] = new Commit(
-    key,
-    version,
-    payload,
-    author,
-    comment,
-    mtime
-  )
+  ): Commit[ValueType] = {
+    Commit(
+      CommitMetadata(key, version, author, comment, mtime, payload.isEmpty),
+      payload
+    )
+  }
+
+  def unapply[ValueType](commit: Commit[ValueType]): Option[(CommitMetadata, Option[Array[Byte]])] = {
+    Some((commit.meta, commit.payload))
+  }
 
   def serialize[ValueType](commit: Commit[ValueType]): Array[Byte] = {
-    val headerBytes = Jackson.bytes(commit.metadata)
+    val headerBytes = Jackson.bytes(commit.meta.asMap)
     val valueBytes = commit.payload.getOrElse(Array.empty)
     val newLine = Array[Byte]('\n')
     headerBytes.size.toString.getBytes(Charsets.UTF_8) ++ newLine ++ headerBytes ++ newLine ++ valueBytes ++ newLine
@@ -121,22 +123,7 @@ object Commit
     val headerBytes = bytes.drop(headerSizeBytes.size + 1).take(headerSize)
     val valueBytes = bytes.drop(headerSizeBytes.size + 1 + headerSize + 1).dropRight(1)
     val header = Jackson.parse[Dict](headerBytes)
-    fromMetadataAndPayload(header, valueBytes)
-  }
-
-  def fromMetadataAndPayload[ValueType: KeyValueDeserialization](
-    meta: Dict,
-    payload: Array[Byte]
-  ): Commit[ValueType] =
-  {
-    val empty = bool(meta.getOrElse("empty", false))
-    new Commit(
-      str(meta("key")),
-      int(meta("version")),
-      if (empty) None else Some(payload),
-      str(meta("author")),
-      str(meta("comment")),
-      new DateTime(str(meta("mtime")))
-    )
+    val meta = CommitMetadata.fromMap(header)
+    Commit(meta, if (meta.empty) None else Some(valueBytes))
   }
 }

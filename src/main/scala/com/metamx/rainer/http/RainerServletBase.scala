@@ -18,35 +18,46 @@
 package com.metamx.rainer.http
 
 import com.google.common.base.Charsets
+import com.google.common.io.BaseEncoding
 import com.metamx.common.scala.Jackson
 import com.metamx.rainer.Commit
 import java.nio.ByteBuffer
 import java.nio.charset.{CharacterCodingException, CodingErrorAction}
-import org.scalatra.{NotFound, Ok, ScalatraServlet}
+import org.scalatra.{BadRequest, NotFound, Ok, ScalatraServlet}
 
 trait RainerServletBase {
   self: ScalatraServlet =>
 
   protected def doList[ValueType](heads: Map[Commit.Key, Commit[ValueType]]) = {
-    Ok(
-      json {
-        for {
-          (k, commit) <- heads
-          value <- commit.value.flatMap(_.right.toOption)
-        } yield {
-          (k, commit.metadata)
-        }
-      }
-    )
+    val payloadUtf8Option = RainerServlet.yesNo(params.getOrElse("payload_utf8", "false"))
+    val payloadBase64Option = RainerServlet.yesNo(params.getOrElse("payload_base64", "false"))
+    val allOption = RainerServlet.yesNo(params.getOrElse("all", "false"))
+    (allOption, payloadUtf8Option, payloadBase64Option) match {
+      case (None, _, _) => BadRequest("Invalid 'all' parameter (should be boolean)")
+      case (_, None, _) => BadRequest("Invalid 'payload_utf8' parameter (should be boolean)")
+      case (_, _, None) => BadRequest("Invalid 'payload_base64' parameter (should be boolean)")
+      case (Some(all), Some(payloadUtf8), Some(payloadBase64)) =>
+        Ok(json {
+          for ((k, commit) <- heads if all || commit.payload.nonEmpty) yield {
+            (k, commit.meta.asMap ++ (if (commit.payload.isDefined && payloadUtf8) {
+              Some("payload_utf8" -> new String(commit.payload.get, Charsets.UTF_8))
+            } else {
+              None
+            }) ++ (if (commit.payload.isDefined && payloadBase64) {
+              Some("payload_base64" -> BaseEncoding.base64().encode(commit.payload.get))
+            } else {
+              None
+            }))
+          }
+        })
+    }
   }
 
   protected def doGet[ValueType](commitOption: Option[Commit[ValueType]]) = {
     commitOption match {
-      case Some(commit) if commit.payload.isDefined =>
-        Ok(
-          textIfPossible(commit.payload.get),
-          RainerServlet.commitHttpHeaders(commit)
-        )
+      case Some(Commit(meta, payloadOption)) =>
+        val payload = payloadOption.getOrElse(Array.empty[Byte])
+        Ok(textIfPossible(payload), RainerServlet.headersForCommitMetadata(meta))
       case _ =>
         NotFound("Key not found")
     }
@@ -55,7 +66,7 @@ trait RainerServletBase {
   protected def doGetMeta[ValueType](commitOption: Option[Commit[ValueType]]) = {
     commitOption match {
       case Some(commit) =>
-        Ok(json(commit.metadata))
+        Ok(json(commit.meta.asMap))
       case None =>
         NotFound("Key not found")
     }

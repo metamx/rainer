@@ -50,8 +50,8 @@ trait CommitStorageTests extends Spec
   {
     withStorage {
       storage =>
-        val commit1 = Commit.create[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
-        val commit2 = Commit.create[TestPayload]("what", 2, TP("xxx"), "nobody", "nothing", new DateTime(1))
+        val commit1 = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+        val commit2 = Commit[TestPayload]("what", 2, TP("xxx"), "nobody", "nothing", new DateTime(1))
         storage.save(commit1)
         storage.save(commit2)
         storage.keys.toSeq must be(Seq("what"))
@@ -68,8 +68,8 @@ trait CommitStorageTests extends Spec
   {
     withStorage {
       storage =>
-        val commit1 = Commit.create[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
-        val commit3 = Commit.create[TestPayload]("what", 3, TP("xxx"), "nobody", "nothing", new DateTime(1))
+        val commit1 = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+        val commit3 = Commit[TestPayload]("what", 3, TP("xxx"), "nobody", "nothing", new DateTime(1))
         evaluating {
           storage.save(commit3)
         } must throwAn[IllegalArgumentException](""".*Concurrent modification: what: .*""".r)
@@ -94,8 +94,8 @@ trait CommitStorageTests extends Spec
   {
     withStorage {
       storage =>
-        val commit1 = Commit.create[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
-        val commit2 = Commit.create[TestPayload]("what", 2, TP(""), "nobody", "nothing", new DateTime(1))
+        val commit1 = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+        val commit2 = Commit[TestPayload]("what", 2, None, "nobody", "nothing", new DateTime(1))
         storage.save(commit1)
         storage.save(commit2)
         storage.keys.toSeq must be(Seq("what"))
@@ -112,7 +112,7 @@ trait CommitStorageTests extends Spec
   {
     withPairedStorages {
       (storage, storageStrict) =>
-        val theCommit = Commit.create[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+        val theCommit = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
         storage.save(theCommit)
         storage.get("what") must be(Some(theCommit))
         val strictCommit = storageStrict.get("what").get
@@ -138,7 +138,7 @@ trait CommitStorageTests extends Spec
           commit =>
             commits += 1
         }
-        val theCommit = Commit.create[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+        val theCommit = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
         hookedStorage.save(theCommit)
         evaluating {
           hookedStorage.save(theCommit)

@@ -27,7 +27,7 @@ import com.twitter.finagle.Service
 import com.twitter.util.{Future, Await}
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.{HttpMethod, HttpVersion, DefaultHttpRequest, HttpResponse, HttpRequest}
-import scala.collection.immutable.Iterable
+import scala.collection.JavaConverters._
 
 /**
  * CommitStorage implementation backed by a remote rainer servlet.
@@ -47,13 +47,13 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
 
   override def keys = {
     Await.result(
-      client(request(HttpMethod.GET, "")).map(failOnErrors).map(parseJson[Dict]).map(_.keys)
+      client(request(HttpMethod.GET, "", Some("all=yes"))).map(failOnErrors).map(parseJson[Dict]).map(_.keys)
     )
   }
 
   override def heads = {
     Await.result(
-      client(request(HttpMethod.GET, "")).map(failOnErrors).map(parseJson[Dict]) flatMap {
+      client(request(HttpMethod.GET, "", Some("all=yes"))).map(failOnErrors).map(parseJson[Dict]) flatMap {
         d =>
           val kvFutures: Iterable[Future[(Commit.Key, Commit[ValueType])]] = {
             for ((k, meta) <- d) yield {
@@ -83,10 +83,10 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   override def save(commit: Commit[ValueType]) {
     val response =
       client(
-        request(HttpMethod.POST, "/%s/%d" format(commit.key, commit.version)) withEffect {
+        request(HttpMethod.POST, "/%s/%d" format(commit.key, commit.version), None) withEffect {
           req =>
             val bytes = commit.payload.getOrElse(Array.empty[Byte])
-            for ((k, v) <- RainerServlet.commitHttpHeaders(commit)) {
+            for ((k, v) <- RainerServlet.headersForCommitMetadata(commit.meta)) {
               req.headers().set(k, v)
             }
             req.headers().set("Content-Length", bytes.size)
@@ -97,10 +97,12 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
     Await.result(response.map(failOnErrors))
   }
 
-  private def uri(suffix: String) = baseUri withPath (_ + suffix)
+  private def uri(suffix: String, queryString: Option[String]): URI = {
+    baseUri.withPath(_ + suffix).withQuery(queryString.orNull)
+  }
 
-  private def request(method: HttpMethod, pathSuffix: String) = {
-    new DefaultHttpRequest(HttpVersion.HTTP_1_1, method, uri(pathSuffix).path) withEffect {
+  private def request(method: HttpMethod, pathSuffix: String, queryString: Option[String]) = {
+    new DefaultHttpRequest(HttpVersion.HTTP_1_1, method, uri(pathSuffix, queryString).toString) withEffect {
       req =>
         val hostAndPort = baseUri.host + (if (baseUri.port > 0) {
           ":%d" format baseUri.port
@@ -113,29 +115,15 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   }
 
   private def asyncGet(key: Commit.Key, version: Option[Int]): Future[Option[Commit[ValueType]]] = {
-    val base = version match {
+    val path = version match {
       case Some(v) => "/%s/%d" format(key, v)
       case None => "/%s" format key
     }
-    val meta = client(request(HttpMethod.GET, base + "/meta"))
+    val commit = client(request(HttpMethod.GET, path, None))
       .map(swallow404)
       .map(_.map(failOnErrors))
-      .map(_.map(parseJson[Dict]))
-    val payload = client(request(HttpMethod.GET, base))
-      .map(swallow404)
-      .map(_.map(failOnErrors))
-      .map(_.map(asBytes))
-    Future.join(meta, payload) map {
-      case (Some(m), Some(p)) =>
-        Some(Commit.fromMetadataAndPayload(m, p))
-      case (None, None) =>
-        None
-      case _ =>
-        throw new IllegalArgumentException(
-          "Inconsistent state: Only one of meta, payload returned for key[%s] version[%s]." format
-            (key, version)
-        )
-    }
+      .map(_.map(asCommit))
+    commit
   }
 
   /**
@@ -171,6 +159,20 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
     val bytes = Array.ofDim[Byte](byteBuffer.remaining())
     byteBuffer.get(bytes)
     bytes
+  }
+
+  /**
+   * Extract Commit object from the response.
+   */
+  private def asCommit(response: HttpResponse): Commit[ValueType] = {
+    val meta = RainerServlet.commitMetadataForHeaders(
+      response.headers().asScala.map {
+        entry =>
+          (entry.getKey, entry.getValue)
+      }.toMap
+    )
+    val bytes = asBytes(response)
+    Commit(meta, if (meta.empty) None else Some(bytes))
   }
 
   /**

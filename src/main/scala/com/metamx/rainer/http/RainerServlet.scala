@@ -21,7 +21,7 @@ import com.google.common.io.ByteStreams
 import com.metamx.common.scala.Logging
 import com.metamx.common.scala.exception._
 import com.metamx.common.scala.timekeeper.{SystemTimekeeper, Timekeeper}
-import com.metamx.rainer.{KeyValueDeserialization, Commit, CommitStorage}
+import com.metamx.rainer.{CommitMetadata, KeyValueDeserialization, Commit, CommitStorage}
 import org.joda.time.DateTime
 import org.scalatra.{Ok, BadRequest, ScalatraServlet}
 
@@ -41,7 +41,6 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase wi
   }
 
   get("/:key/:version/meta") {
-    contentType = "fdafda"
     doGetMeta(commitStorage.get(params("key"), params("version").toInt))
   }
 
@@ -69,13 +68,8 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase wi
         case (None, _) => BadRequest("Missing header: X-Rainer-Author")
         case (_, None) => BadRequest("Missing header: X-Rainer-Comment")
         case (Some(author), Some(comment)) =>
-          val empty = request.header("X-Rainer-Empty").map(_.toLowerCase).getOrElse("false") match {
-            case "yes" | "true" | "1" =>
-              true
-            case "no" | "false" | "0" =>
-              false
-            case _ =>
-              throw new ClientException("Malformed header: X-Rainer-Empty")
+          val empty = RainerServlet.yesNo(request.header("X-Rainer-Empty").getOrElse("false")) getOrElse {
+            throw new ClientException("Malformed header: X-Rainer-Empty")
           }
           val mtime = request.header("X-Rainer-Modified-Time").map(new DateTime(_)).getOrElse(timekeeper.now)
           val payload = if (empty) {
@@ -92,7 +86,7 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase wi
                 throw new ClientException("Malformed input: %s" format e.toString)
             }
           }
-          val commit = Commit.create[ValueType](
+          val commit = Commit[ValueType](
             key,
             version,
             payload,
@@ -102,7 +96,7 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase wi
           )(valueDeserialization)
           commitStorage.save(commit).catchEither[IllegalArgumentException] match {
             case Right(()) =>
-              Ok(json(commit.metadata))
+              Ok(json(commit.meta.asMap))
 
             case Left(e: IllegalArgumentException) =>
               // This is likely a user error.
@@ -118,18 +112,38 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase wi
 
 object RainerServlet
 {
+  def yesNo(s: String): Option[Boolean] = Some(s.toLowerCase) collect {
+    case "yes" | "true" | "1" =>
+      true
+    case "no" | "false" | "0" =>
+      false
+  }
+
   /**
    * HTTP headers corresponding to a commit's metadata. These will be returned on GETs, and can be set on POSTs.
-   * @return
    */
-  def commitHttpHeaders[A](commit: Commit[A]): Map[String, String] = {
+  def headersForCommitMetadata(meta: CommitMetadata): Map[String, String] = {
     Map(
-      "X-Rainer-Key" -> commit.key,
-      "X-Rainer-Version" -> commit.version.toString,
-      "X-Rainer-Author" -> commit.author,
-      "X-Rainer-Comment" -> commit.comment,
-      "X-Rainer-Modified-Time" -> commit.mtime.toString(),
-      "X-Rainer-Empty" -> (if (commit.payload.isEmpty) "Yes" else "No")
+      "X-Rainer-Key" -> meta.key,
+      "X-Rainer-Version" -> meta.version.toString,
+      "X-Rainer-Author" -> meta.author,
+      "X-Rainer-Comment" -> meta.comment,
+      "X-Rainer-Modified-Time" -> meta.mtime.toString(),
+      "X-Rainer-Empty" -> (if (meta.empty) "Yes" else "No")
+    )
+  }
+
+  /**
+   * Commit metadata corresponding to HTTP headers (the reverse of `headersForCommit`):
+   */
+  def commitMetadataForHeaders(headers: Map[String, String]): CommitMetadata = {
+    CommitMetadata(
+      headers("X-Rainer-Key"),
+      headers("X-Rainer-Version").toInt,
+      headers("X-Rainer-Author"),
+      headers("X-Rainer-Comment"),
+      new DateTime(headers("X-Rainer-Modified-Time")),
+      yesNo(headers("X-Rainer-Empty")).getOrElse(false)
     )
   }
 }

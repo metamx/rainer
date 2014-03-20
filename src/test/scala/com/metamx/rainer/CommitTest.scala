@@ -36,14 +36,14 @@ class CommitTest extends Spec
     @Test
     def testSimple()
     {
-      val commit = Commit.create[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
+      val commit = Commit[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
       commit.toString must be("Commit(hey,1,[11 bytes],nobody,nothing,1970-01-01T00:00:00.002Z)")
     }
 
     @Test
     def testEmpty()
     {
-      val commit = Commit.create[TestPayload]("hey", 1, None, "nobody", "nothing", new DateTime(2))
+      val commit = Commit[TestPayload]("hey", 1, None, "nobody", "nothing", new DateTime(2))
       commit.toString must be("Commit(hey,1,[empty],nobody,nothing,1970-01-01T00:00:00.002Z)")
     }
   }
@@ -53,15 +53,15 @@ class CommitTest extends Spec
     @Test
     def testSimple()
     {
-      val commit = Commit.create[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
-      val commit2a = Commit.create[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
-      val commit2b = Commit.create[TestPayload]("hez", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
-      val commit2c = Commit.create[TestPayload]("hey", 2, TP("lol"), "nobody", "nothing", new DateTime(2))
-      val commit2d = Commit.create[TestPayload]("hey", 1, TP("loo"), "nobody", "nothing", new DateTime(2))
-      val commit2e = Commit.create[TestPayload]("hey", 1, TP("lol"), "nobodz", "nothing", new DateTime(2))
-      val commit2f = Commit.create[TestPayload]("hey", 1, TP("lol"), "nobody", "nothinz", new DateTime(2))
-      val commit2g = Commit.create[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(3))
-      val commit2h = Commit.create[TestPayload]("hey", 1, None, "nobody", "nothing", new DateTime(3))
+      val commit = Commit[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
+      val commit2a = Commit[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
+      val commit2b = Commit[TestPayload]("hez", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
+      val commit2c = Commit[TestPayload]("hey", 2, TP("lol"), "nobody", "nothing", new DateTime(2))
+      val commit2d = Commit[TestPayload]("hey", 1, TP("loo"), "nobody", "nothing", new DateTime(2))
+      val commit2e = Commit[TestPayload]("hey", 1, TP("lol"), "nobodz", "nothing", new DateTime(2))
+      val commit2f = Commit[TestPayload]("hey", 1, TP("lol"), "nobody", "nothinz", new DateTime(2))
+      val commit2g = Commit[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(3))
+      val commit2h = Commit[TestPayload]("hey", 1, None, "nobody", "nothing", new DateTime(3))
       commit must be(commit2a)
       commit.hashCode() must be(commit2a.hashCode())
       Seq(commit2b, commit2c, commit2d, commit2e, commit2f, commit2g, commit2h) foreach {
@@ -71,12 +71,29 @@ class CommitTest extends Spec
     }
   }
 
+  class PatternMatching
+  {
+    @Test
+    def testSimple()
+    {
+      val commit = Commit[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
+      val meta = commit match {
+        case Commit(m, p) => m
+      }
+      val payload = commit match {
+        case Commit(m, Some(p)) => p
+      }
+      meta must be(CommitMetadata("hey", 1, "nobody", "nothing", new DateTime(2), false))
+      payload.deep must be(TP("lol").get.deep)
+    }
+  }
+
   class Serialization
   {
     @Test
     def testSimple()
     {
-      val commit = Commit.create[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
+      val commit = Commit[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
       val commit2 = Commit.deserializeOrThrow[TestPayload](Commit.serialize(commit))
       commit2 must be(commit)
       commit2.hashCode() must be(commit.hashCode())
@@ -88,7 +105,7 @@ class CommitTest extends Spec
     {
       val bytes = """cant deserialize!!""".getBytes
       val commit: Commit[TestPayload] =
-        Commit.create[TestPayload]("hey", 1, Some(bytes), "nobody", "nothing", new DateTime(2))
+        Commit[TestPayload]("hey", 1, Some(bytes), "nobody", "nothing", new DateTime(2))
       val serialized = Commit.serialize(commit)
       val commit2 = Commit.deserializeOrThrow[TestPayload](serialized)
       evaluating {
@@ -99,7 +116,7 @@ class CommitTest extends Spec
     @Test
     def testBadSerializedValue()
     {
-      val commit = Commit.create[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
+      val commit = Commit[TestPayload]("hey", 1, TP("lol"), "nobody", "nothing", new DateTime(2))
       val commit2 = Commit.deserializeOrThrow[TestPayloadStrict](Commit.serialize(commit))
       commit2.key must be("hey")
       commit2.version must be(1)

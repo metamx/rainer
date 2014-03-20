@@ -10,7 +10,7 @@ part of a powerful configuration management system.
 Commits have the attributes:
 
 - Key, which is a String.
-- Value, which can be an arbitrary type. Think of this like a short document.
+- Payload, which can be an arbitrary type. Think of this like a short document.
 - Version, which must increase by one with each commit.
 - Author, the entity that created the commit.
 - Comment, some free-form string describing the commit.
