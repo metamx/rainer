@@ -80,11 +80,11 @@ class CommitTest extends Spec
       val meta = commit match {
         case Commit(m, p) => m
       }
-      val payload = commit match {
-        case Commit(m, Some(p)) => p
+      val value = commit match {
+        case Commit(m, Some(Right(TestPayload(s)))) => s
       }
       meta must be(CommitMetadata("hey", 1, "nobody", "nothing", new DateTime(2), false))
-      payload.deep must be(TP("lol").get.deep)
+      value must be("lol")
     }
   }
 

@@ -55,9 +55,9 @@ trait RainerServletBase {
 
   protected def doGet[ValueType](commitOption: Option[Commit[ValueType]]) = {
     commitOption match {
-      case Some(Commit(meta, payloadOption)) =>
-        val payload = payloadOption.getOrElse(Array.empty[Byte])
-        Ok(textIfPossible(payload), RainerServlet.headersForCommitMetadata(meta))
+      case Some(commit) =>
+        val payload = commit.payload.getOrElse(Array.empty[Byte])
+        Ok(textIfPossible(payload), RainerServlet.headersForCommitMetadata(commit.meta))
       case _ =>
         NotFound("Key not found")
     }

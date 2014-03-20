@@ -107,8 +107,8 @@ object Commit
     )
   }
 
-  def unapply[ValueType](commit: Commit[ValueType]): Option[(CommitMetadata, Option[Array[Byte]])] = {
-    Some((commit.meta, commit.payload))
+  def unapply[ValueType](commit: Commit[ValueType]): Option[(CommitMetadata, Option[Either[Exception, ValueType]])] = {
+    Some((commit.meta, commit.value))
   }
 
   def serialize[ValueType](commit: Commit[ValueType]): Array[Byte] = {
