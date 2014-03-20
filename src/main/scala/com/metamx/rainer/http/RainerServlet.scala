@@ -17,28 +17,22 @@
 
 package com.metamx.rainer.http
 
-import com.google.common.base.Charsets
 import com.google.common.io.ByteStreams
+import com.metamx.common.scala.Logging
 import com.metamx.common.scala.exception._
 import com.metamx.common.scala.timekeeper.{SystemTimekeeper, Timekeeper}
-import com.metamx.common.scala.{Logging, Jackson}
 import com.metamx.rainer.{KeyValueDeserialization, Commit, CommitStorage}
-import java.nio.ByteBuffer
-import java.nio.charset.{CharacterCodingException, CodingErrorAction}
 import org.joda.time.DateTime
-import org.scalatra.{Ok, NotFound, BadRequest, ScalatraServlet}
+import org.scalatra.{Ok, BadRequest, ScalatraServlet}
 
-trait RainerServlet[ValueType] extends ScalatraServlet with Logging
+trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletUtils with Logging
 {
   def commitStorage: CommitStorage[ValueType]
-
-  def root: String = "/"
-
   def valueDeserialization: KeyValueDeserialization[ValueType]
 
   val timekeeper: Timekeeper = new SystemTimekeeper
 
-  get(root) {
+  get("/") {
     json {
       for {
         (k, commit) <- commitStorage.heads
@@ -49,23 +43,24 @@ trait RainerServlet[ValueType] extends ScalatraServlet with Logging
     }
   }
 
-  get(root.stripSuffix("/") + "/:key/:version") {
+  get("/:key/:version") {
     doGet(commitStorage.get(params("key"), params("version").toInt))
   }
 
-  get(root.stripSuffix("/") + "/:key/:version/meta") {
+  get("/:key/:version/meta") {
+    contentType = "fdafda"
     doGetMeta(commitStorage.get(params("key"), params("version").toInt))
   }
 
-  get(root.stripSuffix("/") + "/:key") {
+  get("/:key") {
     doGet(commitStorage.get(params("key")))
   }
 
-  get(root.stripSuffix("/") + "/:key/meta") {
+  get("/:key/meta") {
     doGetMeta(commitStorage.get(params("key")))
   }
 
-  post(root.stripSuffix("/") + "/:key/:version") {
+  post("/:key/:version") {
     class ClientException(msg: String) extends Exception(msg)
     try {
       val key = params("key")
@@ -125,53 +120,6 @@ trait RainerServlet[ValueType] extends ScalatraServlet with Logging
       case e: ClientException =>
         BadRequest(e.getMessage)
     }
-  }
-
-  private def doGet(commitOption: Option[Commit[ValueType]]) = {
-    commitOption match {
-      case Some(commit) if commit.payload.isDefined =>
-        Ok(
-          textIfPossible(commit.payload.get),
-          RainerServlet.commitHttpHeaders(commit)
-        )
-      case _ =>
-        NotFound("Key not found")
-    }
-  }
-
-  private def doGetMeta(commitOption: Option[Commit[ValueType]]) = {
-    commitOption match {
-      case Some(commit) =>
-        json(commit.metadata)
-      case None =>
-        NotFound("Key not found")
-    }
-  }
-
-  private def text(x: String) = {
-    contentType = "text/plain; charset=UTF-8"
-    x.getBytes(Charsets.UTF_8)
-  }
-
-  private def binary(x: Array[Byte]) = {
-    contentType = "application/octet-stream"
-    x
-  }
-
-  private def textIfPossible(x: Array[Byte]) = {
-    val decoder = Charsets.UTF_8.newDecoder()
-    decoder.onMalformedInput(CodingErrorAction.REPORT)
-    try {
-      text(decoder.decode(ByteBuffer.wrap(x)).toString)
-    } catch {
-      case e: CharacterCodingException =>
-        binary(x)
-    }
-  }
-
-  private def json[A](x: A) = {
-    contentType = "application/json"
-    Jackson.generate(x) + "\r\n"
   }
 }
 
