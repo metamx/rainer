@@ -25,7 +25,7 @@ import com.metamx.rainer.{KeyValueDeserialization, Commit, CommitStorage}
 import org.joda.time.DateTime
 import org.scalatra.{Ok, BadRequest, ScalatraServlet}
 
-trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletUtils with Logging
+trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase with Logging
 {
   def commitStorage: CommitStorage[ValueType]
   def valueDeserialization: KeyValueDeserialization[ValueType]
@@ -33,14 +33,7 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletUtils w
   val timekeeper: Timekeeper = new SystemTimekeeper
 
   get("/") {
-    json {
-      for {
-        (k, commit) <- commitStorage.heads
-        value <- commit.value.flatMap(_.right.toOption)
-      } yield {
-        (k, commit.metadata)
-      }
-    }
+    doList(commitStorage.heads)
   }
 
   get("/:key/:version") {

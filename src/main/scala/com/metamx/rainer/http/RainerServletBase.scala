@@ -24,8 +24,21 @@ import java.nio.ByteBuffer
 import java.nio.charset.{CharacterCodingException, CodingErrorAction}
 import org.scalatra.{NotFound, Ok, ScalatraServlet}
 
-trait RainerServletUtils {
+trait RainerServletBase {
   self: ScalatraServlet =>
+
+  protected def doList[ValueType](heads: Map[Commit.Key, Commit[ValueType]]) = {
+    Ok(
+      json {
+        for {
+          (k, commit) <- heads
+          value <- commit.value.flatMap(_.right.toOption)
+        } yield {
+          (k, commit.metadata)
+        }
+      }
+    )
+  }
 
   protected def doGet[ValueType](commitOption: Option[Commit[ValueType]]) = {
     commitOption match {

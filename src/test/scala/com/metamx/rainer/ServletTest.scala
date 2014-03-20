@@ -337,10 +337,61 @@ class ServletTest extends Spec with RainerTests
           }
 
           within(2.seconds) {
+            tester.get("/things") {
+              tester.status must be(200)
+              tester.header.get("X-Rainer-Cached") must be(Some("Yes"))
+              Jackson.parse[Dict](tester.body) must be(
+                Map(
+                  "what" -> Map(
+                    "key" -> "what",
+                    "version" -> 1,
+                    "author" -> "dude",
+                    "comment" -> "stuff",
+                    "mtime" -> "1970-01-01T00:00:00.002Z",
+                    "empty" -> false
+                  )
+                )
+              )
+            }
             tester.get("/things/what") {
               tester.body must be( """{"s": "hey"}""")
               tester.status must be(200)
-              tester.header("X-Rainer-Cached") must be("Yes")
+              tester.header.get("X-Rainer-Cached") must be(Some("Yes"))
+              tester.header("X-Rainer-Version") must be("1")
+            }
+            tester.get("/things/what/1") {
+              tester.body must be( """{"s": "hey"}""")
+              tester.status must be(200)
+              tester.header.get("X-Rainer-Cached") must be(None)
+              tester.header("X-Rainer-Version") must be("1")
+            }
+            tester.get("/things/what/meta") {
+              tester.status must be(200)
+              tester.header.get("X-Rainer-Cached") must be(Some("Yes"))
+              Jackson.parse[Dict](tester.body) must be(
+                Map(
+                  "key" -> "what",
+                  "version" -> 1,
+                  "author" -> "dude",
+                  "comment" -> "stuff",
+                  "mtime" -> "1970-01-01T00:00:00.002Z",
+                  "empty" -> false
+                )
+              )
+            }
+            tester.get("/things/what/1/meta") {
+              tester.status must be(200)
+              tester.header.get("X-Rainer-Cached") must be(None)
+              Jackson.parse[Dict](tester.body) must be(
+                Map(
+                  "key" -> "what",
+                  "version" -> 1,
+                  "author" -> "dude",
+                  "comment" -> "stuff",
+                  "mtime" -> "1970-01-01T00:00:00.002Z",
+                  "empty" -> false
+                )
+              )
             }
           }
       }

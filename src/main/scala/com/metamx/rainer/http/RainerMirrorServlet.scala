@@ -35,23 +35,23 @@ import org.scalatra.{ActionResult, ScalatraServlet}
  * }}}
  *
  */
-trait RainerMirrorServlet[ValueType] extends ScalatraServlet with RainerServletUtils with Logging
+trait RainerMirrorServlet[ValueType] extends ScalatraServlet with RainerServletBase with Logging
 {
   def mirror: AtomicReference[Map[String, Commit[ValueType]]]
-
-  private def getMirror(key: String) = {
-    mirror.get().get(key)
-  }
 
   private def addHeader(res: ActionResult) = {
     res.copy(headers = res.headers + ("X-Rainer-Cached" -> "Yes"))
   }
 
+  get("/") {
+    addHeader(doList(mirror.get()))
+  }
+
   get("/:key") {
-    addHeader(doGet(getMirror(params("key"))))
+    addHeader(doGet(mirror.get().get(params("key"))))
   }
 
   get("/:key/meta") {
-    addHeader(doGetMeta(getMirror(params("key"))))
+    addHeader(doGetMeta(mirror.get().get(params("key"))))
   }
 }
