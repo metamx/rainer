@@ -34,7 +34,8 @@ def decorate_argparser(parser, default_url):
     sp.add_argument('key', metavar='key', nargs=1, help='commit key')
     sp.add_argument('version', metavar='version', type=int, nargs="?", help='commit version')
 
-  subparsers["list"]    = subparser.add_parser('list')
+  subparsers["list"] = subparser.add_parser('list')
+  subparsers["list"].add_argument('-A', '--all', action='store_true')
 
 def make_client(args):
   return http.RainerClient(args.url)
@@ -56,7 +57,7 @@ def run(default_url=None):
     make_cli(args).action_prepare(args.key[0], args.version)
 
   elif args.mode == "list":
-    make_cli(args).action_list()
+    make_cli(args).action_list(args.all)
 
   elif args.mode == "edit":
     make_cli(args).action_edit(args.key[0], args.version)

@@ -31,8 +31,8 @@ class RainerCommandLine:
     next_commit = self.next_commit(commit)
     print self.prepare_commit(next_commit),
 
-  def action_list(self):
-    data = self.client.list()
+  def action_list(self, all=False):
+    data = self.client.list(all)
     for key in sorted(data.keys()):
       version = data[key]['version']
       print "%s\t%s\t%s" % (key, str(version), self.client.commit_uri(key, version))

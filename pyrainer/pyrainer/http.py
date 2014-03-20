@@ -15,9 +15,9 @@ class RainerClient:
     """Base URI for a commit key, possibly at a specific version."""
     return self.base_uri + "/" + key + (("/" + str(version)) if version != None else "")
 
-  def list(self):
+  def list(self, all=False):
     """Get a dict of commit key -> metadata for the most recent versions."""
-    rsp  = urllib2.urlopen(self.base_uri)
+    rsp  = urllib2.urlopen(self.base_uri + ("?all=yes" if all else ""))
     return json.loads(rsp.read())
 
   def get_commit(self, key, version=None):
