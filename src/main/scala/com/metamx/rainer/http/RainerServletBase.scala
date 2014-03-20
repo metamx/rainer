@@ -28,17 +28,20 @@ import org.scalatra.{BadRequest, NotFound, Ok, ScalatraServlet}
 trait RainerServletBase {
   self: ScalatraServlet =>
 
+  protected def shouldListAll = RainerServlet.yesNo(params.getOrElse("all", "false"))
+
   protected def doList[ValueType](heads: Map[Commit.Key, Commit[ValueType]]) = {
     val payloadUtf8Option = RainerServlet.yesNo(params.getOrElse("payload_utf8", "false"))
     val payloadBase64Option = RainerServlet.yesNo(params.getOrElse("payload_base64", "false"))
-    val allOption = RainerServlet.yesNo(params.getOrElse("all", "false"))
+    val allOption = shouldListAll
     (allOption, payloadUtf8Option, payloadBase64Option) match {
       case (None, _, _) => BadRequest("Invalid 'all' parameter (should be boolean)")
       case (_, None, _) => BadRequest("Invalid 'payload_utf8' parameter (should be boolean)")
       case (_, _, None) => BadRequest("Invalid 'payload_base64' parameter (should be boolean)")
       case (Some(all), Some(payloadUtf8), Some(payloadBase64)) =>
         Ok(json {
-          for ((k, commit) <- heads if all || commit.payload.nonEmpty) yield {
+          // Still need to filter empty commits when !all, because our caller might not have done it.
+          for ((k, commit) <- heads if all || !commit.isEmpty) yield {
             (k, commit.meta.asMap ++ (if (commit.payload.isDefined && payloadUtf8) {
               Some("payload_utf8" -> new String(commit.payload.get, Charsets.UTF_8))
             } else {

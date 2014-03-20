@@ -33,7 +33,8 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase wi
   val timekeeper: Timekeeper = new SystemTimekeeper
 
   get("/") {
-    doList(commitStorage.heads)
+    val heads = if (shouldListAll.getOrElse(false)) commitStorage.heads else commitStorage.headsNonEmpty
+    doList(heads)
   }
 
   get("/:key/:version") {
