@@ -1,0 +1,244 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>com.metamx.rainer</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../lib/template.css" />
+      <script type="text/javascript" src="../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body onload="sh_highlightDocument('../lib/', '.min.js');" class="value">
+      <div id="definition">
+        <img src="../../../lib/package_big.png" />
+        <p id="owner"><a name="com" class="extype" href="../../package.html">com</a>.<a name="com.metamx" class="extype" href="../package.html">metamx</a></p>
+        <h1>rainer</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">rainer</span>
+      </span>
+      </h4>
+      
+      <div class="fullcommenttop" id="comment"></div>
+    
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="com.metamx.rainer.Commit" data-isabs="false">
+      <a id="Commit:Commit[ValueType]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Commit.html"><span class="name">Commit</span></a><span class="tparams">[<span name="ValueType">ValueType</span>]</span><span class="result"> extends Equals</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Represents a key/value commit.</p>
+    </li><li visbl="pub" name="com.metamx.rainer.CommitAutoPublisher" data-isabs="true">
+      <a id="CommitAutoPublisher:CommitAutoPublisher"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="CommitAutoPublisher.html"><span class="name">CommitAutoPublisher</span></a><span class="result"> extends Closable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.metamx.rainer.CommitKeeper" data-isabs="false">
+      <a id="CommitKeeper:CommitKeeper[ValueType]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CommitKeeper.html"><span class="name">CommitKeeper</span></a><span class="tparams">[<span name="ValueType">ValueType</span>]</span><span class="result"> extends Logging</span>
+      </span>
+      </h4>
+      <p class="comment cmt">ZooKeeper-based storage and notification for each key's most current commit.</p>
+    </li><li visbl="pub" name="com.metamx.rainer.CommitStorage" data-isabs="true">
+      <a id="CommitStorage:CommitStorage[ValueType]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="CommitStorage.html"><span class="name">CommitStorage</span></a><span class="tparams">[<span name="ValueType">ValueType</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Long-term storage for full commit history.</p>
+    </li><li visbl="pub" name="com.metamx.rainer.ConcurrentCommitException" data-isabs="false">
+      <a id="ConcurrentCommitException:ConcurrentCommitException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ConcurrentCommitException.html"><span class="name">ConcurrentCommitException</span></a><span class="result"> extends RuntimeException</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.metamx.rainer.DbCommitStorage" data-isabs="false">
+      <a id="DbCommitStorage:DbCommitStorage[ValueType]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DbCommitStorage.html"><span class="name">DbCommitStorage</span></a><span class="tparams">[<span name="ValueType">ValueType</span>]</span><span class="result"> extends CommitStorage[ValueType] with Logging</span>
+      </span>
+      </h4>
+      <p class="comment cmt">CommitStorage implementation backed by an RDBMS.</p>
+    </li><li visbl="pub" name="com.metamx.rainer.DbCommitStorageMixin" data-isabs="true">
+      <a id="DbCommitStorageMixin:DbCommitStorageMixin"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="DbCommitStorageMixin.html"><span class="name">DbCommitStorageMixin</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.metamx.rainer.DbCommitStorageMySQLMixin" data-isabs="true">
+      <a id="DbCommitStorageMySQLMixin:DbCommitStorageMySQLMixin"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="DbCommitStorageMySQLMixin.html"><span class="name">DbCommitStorageMySQLMixin</span></a><span class="result"> extends DbCommitStorageMixin</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.metamx.rainer.HttpCommitStorage" data-isabs="false">
+      <a id="HttpCommitStorage:HttpCommitStorage[ValueType]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="HttpCommitStorage.html"><span class="name">HttpCommitStorage</span></a><span class="tparams">[<span name="ValueType">ValueType</span>]</span><span class="result"> extends CommitStorage[ValueType]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">CommitStorage implementation backed by a remote rainer servlet.</p>
+    </li><li visbl="pub" name="com.metamx.rainer.KeyValueDeserialization" data-isabs="true">
+      <a id="KeyValueDeserialization:KeyValueDeserialization[ValueType]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="KeyValueDeserialization.html"><span class="name">KeyValueDeserialization</span></a><span class="tparams">[<span name="ValueType">ValueType</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="com.metamx.rainer.Commit" data-isabs="false">
+      <a id="Commit:Commit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Commit$.html"><span class="name">Commit</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.metamx.rainer.CommitStorage" data-isabs="false">
+      <a id="CommitStorage:CommitStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CommitStorage$.html"><span class="name">CommitStorage</span></a><span class="result"> extends Logging</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.metamx.rainer.KeyValueDeserialization" data-isabs="false">
+      <a id="KeyValueDeserialization:KeyValueDeserialization"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="KeyValueDeserialization$.html"><span class="name">KeyValueDeserialization</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.metamx.rainer.http" data-isabs="false">
+      <a id="http:http"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="http/package.html"><span class="name">http</span></a>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
