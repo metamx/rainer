@@ -20,15 +20,8 @@ package com.metamx.rainer
 import com.metamx.common.scala.db.{DBConfig, DB}
 import org.scala_tools.time.Imports._
 
-class DerbyMemoryDB(name: String) extends DB(DerbyMemoryDB.config(name)) with DbCommitStorageMixin
+abstract class DerbyMemoryDB(name: String) extends DB(DerbyMemoryDB.config(name)) with DbCommitStorageMixin
 {
-  override def rainerTableSchema = Seq(
-    "name          varchar(255)",
-    "version       int",
-    "payload       varchar(1024) for bit data",
-    "primary key (name, version)"
-  )
-
   override def canLimit = false
 
   override def createIsTransient = (t: Throwable) => false
@@ -53,4 +46,29 @@ object DerbyMemoryDB
 
     override def fetchSize = 100
   }
+}
+
+trait DerbyCommitTable
+{
+  self: DbCommitStorageMixin =>
+
+  override def rainerTableSchema = Seq(
+    "name          varchar(255)",
+    "version       int",
+    "payload       varchar(1024) for bit data",
+    "is_empty      int",
+    "primary key (name, version)"
+  )
+}
+
+trait DerbyCommitTableWithoutIsEmpty
+{
+  self: DbCommitStorageMixin =>
+
+  override def rainerTableSchema = Seq(
+    "name          varchar(255)",
+    "version       int",
+    "payload       varchar(1024) for bit data",
+    "primary key (name, version)"
+  )
 }

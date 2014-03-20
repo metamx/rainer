@@ -38,8 +38,8 @@ trait CommitStorageTests extends Spec
   {
     withStorage {
       storage =>
-        storage.keys.toSeq must be(Seq.empty)
         storage.heads must be(Map.empty[Commit.Key, Commit[TestPayload]])
+        storage.headsNonEmpty must be(Map.empty[Commit.Key, Commit[TestPayload]])
         storage.get("hey") must be(None)
         storage.get("hey", 1) must be(None)
     }
@@ -54,8 +54,8 @@ trait CommitStorageTests extends Spec
         val commit2 = Commit[TestPayload]("what", 2, TP("xxx"), "nobody", "nothing", new DateTime(1))
         storage.save(commit1)
         storage.save(commit2)
-        storage.keys.toSeq must be(Seq("what"))
         storage.heads must be(Map("what" -> commit2))
+        storage.headsNonEmpty must be(Map("what" -> commit2))
         storage.get("what") must be(Some(commit2))
         storage.get("what", 1) must be(Some(commit1))
         storage.get("what", 2) must be(Some(commit2))
@@ -80,8 +80,8 @@ trait CommitStorageTests extends Spec
         evaluating {
           storage.save(commit3)
         } must throwAn[IllegalArgumentException](""".*Concurrent modification: what: .*""".r)
-        storage.keys.toSeq must be(Seq("what"))
         storage.heads must be(Map("what" -> commit1))
+        storage.headsNonEmpty must be(Map("what" -> commit1))
         storage.get("what") must be(Some(commit1))
         storage.get("what", 1) must be(Some(commit1))
         storage.get("what", 2) must be(None)
@@ -98,8 +98,8 @@ trait CommitStorageTests extends Spec
         val commit2 = Commit[TestPayload]("what", 2, None, "nobody", "nothing", new DateTime(1))
         storage.save(commit1)
         storage.save(commit2)
-        storage.keys.toSeq must be(Seq("what"))
         storage.heads must be(Map("what" -> commit2))
+        storage.headsNonEmpty must be(Map.empty[Commit.Key, Commit[TestPayload]])
         storage.get("what") must be(Some(commit2))
         storage.get("what", 1) must be(Some(commit1))
         storage.get("what", 2) must be(Some(commit2))

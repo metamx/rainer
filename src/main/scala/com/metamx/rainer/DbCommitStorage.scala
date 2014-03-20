@@ -18,8 +18,11 @@
 package com.metamx.rainer
 
 import com.metamx.common.scala.Logging
+import com.metamx.common.scala.Predef._
 import com.metamx.common.scala.db.DB
+import com.metamx.common.scala.exception._
 import com.metamx.common.scala.untyped._
+import org.skife.jdbi.v2.exceptions.StatementException
 
 /**
  * CommitStorage implementation backed by an RDBMS.
@@ -27,6 +30,16 @@ import com.metamx.common.scala.untyped._
 class DbCommitStorage[ValueType : KeyValueDeserialization](db: DB with DbCommitStorageMixin, tableName: String)
   extends CommitStorage[ValueType] with Logging
 {
+  // Does this table have the is_empty field? (It's optional)
+  private lazy val tableHasIsEmpty = !raises[StatementException] {
+    db.select("select is_empty from %s where name = ?" format tableName, "dummy")
+  } withEffect {
+    b =>
+      if (!b) {
+        log.warn("The table[%s] does not have an is_empty column. Excluding it from queries.", tableName)
+      }
+  }
+
   private def commitFromMap(m: Dict): Commit[ValueType] = {
     Commit.deserializeOrThrow(m("payload").asInstanceOf[Array[Byte]])
   }
@@ -60,12 +73,22 @@ class DbCommitStorage[ValueType : KeyValueDeserialization](db: DB with DbCommitS
         )
       }
       // Attempt to insert the new commit. If it fails, this means someone else beat us to it.
-      db.execute(
-        "insert into :table: (name, version, payload) values (?,?,?)".replace(":table:", tableName),
-        commit.key,
-        commit.version,
-        commitBytes
-      )
+      if (tableHasIsEmpty) {
+        db.execute(
+          "insert into :table: (name, version, payload, is_empty) values (?,?,?,?)".replace(":table:", tableName),
+          commit.key,
+          commit.version,
+          commitBytes,
+          if (commit.isEmpty) 1 else 0
+        )
+      } else {
+        db.execute(
+          "insert into :table: (name, version, payload) values (?,?,?)".replace(":table:", tableName),
+          commit.key,
+          commit.version,
+          commitBytes
+        )
+      }
       commit
     }
   }
@@ -83,19 +106,27 @@ class DbCommitStorage[ValueType : KeyValueDeserialization](db: DB with DbCommitS
     db.select(sql.replace(":table:", tableName), key, version).headOption.map(commitFromMap)
   }
 
-  override def keys = {
-    val sql = """select distinct :table:.name from :table:"""
-    db.select(sql.replace(":table:", tableName)).map(row => str(row("name")))
+  override def heads = {
+    getHeads(nonEmpty = false)
   }
 
-  override def heads = {
+  override def headsNonEmpty = {
+    // nonEmpty is a hint rather than a hard-and-fast thing. So we still need to filter.
+    getHeads(nonEmpty = true) filter (!_._2.isEmpty)
+  }
+
+  private def getHeads(nonEmpty: Boolean) = {
     val sql =
       """
       select :table:.name, :table:.payload
       from :table:
            join (select name, max(version) as version from :table: group by name) as :table:_max on :table:.name = :table:_max.name and :table:.version = :table:_max.version
+      :where:
       """
-    db.select(sql.replace(":table:", tableName)).map(row => str(row("name")) -> commitFromMap(row)).toMap
+    val where = if (nonEmpty && tableHasIsEmpty) "where :table:.is_empty != 1" else ""
+    db.select(sql.replace(":where:", where).replace(":table:", tableName))
+      .map(row => str(row("name")) -> commitFromMap(row))
+      .toMap
   }
 }
 
@@ -116,6 +147,8 @@ trait DbCommitStorageMySQLMixin extends DbCommitStorageMixin
     "name          varbinary(255)  not null",
     "version       int             not null",
     "payload       mediumblob      not null", // Max size 16MB
-    "primary key (name, version)"
+    "is_empty      tinyint         not null", // Boolean. If true, this commit is definitely empty.
+    "primary key (name, version)",
+    "key (is_empty)"
   )
 }

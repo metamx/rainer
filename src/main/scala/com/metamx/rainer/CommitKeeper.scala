@@ -161,7 +161,7 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
         case Some((Some(zkCommit), zkStat)) => // Possibly update existing znode
 
           // fromKeyAndBytes should have suppressed bad values, so this should never throw.
-          if (commit.payload.isEmpty && commit.version > zkCommit.version) {
+          if (commit.isEmpty && commit.version > zkCommit.version) {
             log.info("Removing commit[%s] (znode[%s])", commit.key, znode(commit.key))
             curator.delete().withVersion(zkStat.getVersion).forPath(znode(commit.key))
           } else if (commit == zkCommit) {
@@ -192,7 +192,7 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
             commit.key, commit.version, znode(commit.key)
           )
 
-          if (commit.payload.isEmpty) {
+          if (commit.isEmpty) {
             curator.delete().withVersion(zkStat.getVersion).forPath(znode(commit.key))
           } else {
             curator
@@ -203,7 +203,7 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
 
         case None => // No existing znode for this commit
 
-          if (commit.payload.isEmpty) {
+          if (commit.isEmpty) {
             log.debug("No need to create empty commit %s (version[%s] znode[%s])",
               commit.key, commit.version, znode(commit.key)
             )

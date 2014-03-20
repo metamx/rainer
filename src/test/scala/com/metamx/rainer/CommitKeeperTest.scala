@@ -263,9 +263,9 @@ class CommitKeeperTest extends Spec with RainerTests
 
                 override def get(key: Commit.Key) = commitMap.get(key)
 
-                override def keys = commitMap.keys
-
                 override def heads = commitMap
+
+                override def headsNonEmpty = commitMap filter (kv => !kv._2.isEmpty)
               }
               val commits = new CommitKeeper[TestPayload](curator, "/hey")
               val autoPublisher = commits.autoPublisher(storage, 1.second, 0.2, delay = false)

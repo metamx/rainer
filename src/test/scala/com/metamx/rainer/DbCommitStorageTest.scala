@@ -23,41 +23,51 @@ import java.util.UUID
 
 class DbCommitStorageTest extends Spec
 {
+  class Derby extends DerbyTests {
+    override def createDb() = new DerbyMemoryDB(UUID.randomUUID().toString) with DerbyCommitTable
+  }
+
+  class DerbyWithoutIsEmpty extends DerbyTests {
+    override def createDb() = new DerbyMemoryDB(UUID.randomUUID().toString) with DerbyCommitTableWithoutIsEmpty
+  }
+}
+
+trait DerbyTests extends CommitStorageTests
+{
+  def createDb(): DB with DbCommitStorageMixin
+
   def withDb[A](f: DB with DbCommitStorageMixin => A): A = {
-    val db = new DerbyMemoryDB(UUID.randomUUID().toString)
+    val db = createDb()
     db.start
     try f(db) finally {
       db.stop
     }
   }
 
-  class A extends CommitStorageTests
-  {
-    override def withPairedStorages(f: (CommitStorage[TestPayload], CommitStorage[TestPayloadStrict]) => Unit) {
-      withDb {
-        db =>
-          val storage = new DbCommitStorage[TestPayload](db, "rainer")
-          val storageStrict = new DbCommitStorage[TestPayloadStrict](db, "rainer")
-          storage.start() // Only start one, starting both throws exceptions with Derby
-          try {
-            f(storage, storageStrict)
-          } finally {
-            storageStrict.stop()
-          }
-      }
+  override def withPairedStorages(f: (CommitStorage[TestPayload], CommitStorage[TestPayloadStrict]) => Unit) {
+    withDb {
+      db =>
+        val storage = new DbCommitStorage[TestPayload](db, "rainer")
+        val storageStrict = new DbCommitStorage[TestPayloadStrict](db, "rainer")
+        storage.start() // Only start one, starting both throws exceptions with Derby
+        try {
+          f(storage, storageStrict)
+        } finally {
+          storageStrict.stop()
+        }
     }
+  }
 
-    override def withStorage(f: (CommitStorage[TestPayload]) => Unit) {
-      withDb {
-        db =>
-          val storage = new DbCommitStorage[TestPayload](db, "rainer")
-          storage.start()
-          try {
-            f(storage)
-          } finally {
-            storage.stop()
-          }
-      }
+  override def withStorage(f: (CommitStorage[TestPayload]) => Unit) {
+    withDb {
+      db =>
+        val storage = new DbCommitStorage[TestPayload](db, "rainer")
+        storage.start()
+        try {
+          f(storage)
+        } finally {
+          storage.stop()
+        }
     }
   }
 }

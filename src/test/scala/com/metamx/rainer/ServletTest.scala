@@ -34,7 +34,6 @@ import org.junit.Test
 import org.scala_tools.time.Imports._
 import org.scalatra.test.ScalatraTests
 
-
 class ServletTest extends Spec with RainerTests
 {
 
@@ -502,7 +501,7 @@ class ServletTest extends Spec with RainerTests
         withCurator(cluster) {
           curator =>
 
-            val db = new DerbyMemoryDB(UUID.randomUUID().toString)
+            val db = new DerbyMemoryDB(UUID.randomUUID().toString) with DerbyCommitTable
             db.start
             try {
               val keeper = new CommitKeeper[TestPayload](curator, "/zk/path")
@@ -542,7 +541,7 @@ class ServletTest extends Spec with RainerTests
 
 
   def execute(f: ScalatraTests => Unit) {
-    val db = new DerbyMemoryDB(UUID.randomUUID().toString)
+    val db = new DerbyMemoryDB(UUID.randomUUID().toString) with DerbyCommitTable
     db.start
     try {
       val storage = new DbCommitStorage[TestPayload](db, "rainer")

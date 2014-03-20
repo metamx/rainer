@@ -28,9 +28,9 @@ trait CommitStorage[ValueType]
 
   def stop()
 
-  def keys: Iterable[Commit.Key]
-
   def heads: Map[Commit.Key, Commit[ValueType]]
+
+  def headsNonEmpty: Map[Commit.Key, Commit[ValueType]]
 
   def get(key: Commit.Key): Option[Commit[ValueType]]
 
@@ -81,9 +81,9 @@ object CommitStorage extends Logging
 
       override def get(key: Commit.Key) = delegate.get(key)
 
-      override def keys = delegate.keys
-
       override def heads = delegate.heads
+
+      override def headsNonEmpty = delegate.headsNonEmpty
     }
   }
 }

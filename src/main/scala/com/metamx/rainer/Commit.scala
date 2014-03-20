@@ -46,6 +46,7 @@ class Commit[ValueType: KeyValueDeserialization](
   def author = meta.author
   def comment = meta.comment
   def mtime = meta.mtime
+  def isEmpty = payload.isEmpty
 
   def value: Option[Either[Exception, ValueType]] = payload map {
     bytes =>
@@ -59,7 +60,7 @@ class Commit[ValueType: KeyValueDeserialization](
       (that canEqual this) &&
         key == that.key &&
         version == that.version &&
-        ((payload.isEmpty && that.payload.isEmpty)
+        ((payload.isEmpty && that.isEmpty)
           || (payload.nonEmpty && that.payload.nonEmpty && payload.get.deep == that.payload.get.deep)) &&
         author == that.author &&
         comment == that.comment &&

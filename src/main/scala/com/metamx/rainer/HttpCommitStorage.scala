@@ -18,10 +18,11 @@
 package com.metamx.rainer
 
 import com.google.common.base.Charsets
+import com.google.common.io.BaseEncoding
 import com.metamx.common.scala.Jackson
 import com.metamx.common.scala.Predef._
 import com.metamx.common.scala.net.uri._
-import com.metamx.common.scala.untyped.{int, dict, Dict}
+import com.metamx.common.scala.untyped.{str, dict, Dict}
 import com.metamx.rainer.http.RainerServlet
 import com.twitter.finagle.Service
 import com.twitter.util.{Future, Await}
@@ -45,35 +46,16 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
 
   override def stop() {}
 
-  override def keys = {
-    Await.result(
-      client(request(HttpMethod.GET, "", Some("all=yes"))).map(failOnErrors).map(parseJson[Dict]).map(_.keys)
-    )
+  override def heads = {
+    val theRequest = request(HttpMethod.GET, "", Some("all=yes&payload_base64=yes"))
+    val theResponse = client(theRequest).map(failOnErrors).map(asHeads)
+    Await.result(theResponse)
   }
 
-  override def heads = {
-    Await.result(
-      client(request(HttpMethod.GET, "", Some("all=yes"))).map(failOnErrors).map(parseJson[Dict]) flatMap {
-        d =>
-          val kvFutures: Iterable[Future[(Commit.Key, Commit[ValueType])]] = {
-            for ((k, meta) <- d) yield {
-              val version = int(dict(meta)("version"))
-              val commitFuture = asyncGet(k, Some(version))
-              commitFuture map {
-                commitOption =>
-                  val commit = commitOption getOrElse {
-                    throw new IllegalStateException(
-                      "Inconsistent state: Listed key[%s] version[%s] but could not get details." format
-                        (k, version)
-                    )
-                  }
-                  (k, commit)
-              }
-            }
-          }
-          Future.collect(kvFutures.toSeq).map(_.toMap)
-      }
-    )
+  override def headsNonEmpty = {
+    val theRequest = request(HttpMethod.GET, "", Some("payload_base64=yes"))
+    val theResponse = client(theRequest).map(failOnErrors).map(asHeads)
+    Await.result(theResponse)
   }
 
   override def get(key: Commit.Key, version: Int) = Await.result(asyncGet(key, Some(version)))
@@ -173,6 +155,18 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
     )
     val bytes = asBytes(response)
     Commit(meta, if (meta.empty) None else Some(bytes))
+  }
+
+  /**
+   * Extract Map of Commits from the response.
+   */
+  private def asHeads(response: HttpResponse): Map[Commit.Key, Commit[ValueType]] = {
+    val d = parseJson[Dict](response)
+    for ((k, data) <- d) yield {
+      val meta = CommitMetadata.fromMap(dict(data))
+      val payload = if (meta.empty) None else Some(BaseEncoding.base64().decode(str(dict(data)("payload_base64"))))
+      (k, Commit(meta, payload))
+    }
   }
 
   /**
