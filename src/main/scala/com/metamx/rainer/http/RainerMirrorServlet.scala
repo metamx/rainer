@@ -25,13 +25,26 @@ import org.scalatra.{ActionResult, ScalatraServlet}
 /**
  * Mixin trait to make [[com.metamx.rainer.http.RainerServlet]] lightnight fast
  *
+ * Uses [[com.metamx.rainer.CommitKeeper]] for read requests and
+ * [[com.metamx.rainer.CommitStorage]] for write requests
+ *
  * ==Example==
  *
  * {{{
- *   val servlet = new RainerServlet[ValueType] with RainerMirrorServlet[ValueType] {
- *      override def commitStorage = myCommitStorage
- *      override def valueDeserialization = myValueDeserialization
- *      override def mirror = myMirror
+ * implicit val deserialization = KeyValueDeserialization.usingJackson[ValueType](objectMapper)
+ *
+ * val keeper = new CommitKeeper[ValueType](zkClient, "/path/in/zk")
+ * val unerlyingStorage = new DbCommitStorage[ValueType](db, "table_name")
+ * val wrappedStorage = CommitStorage.keeperPublishing(unerlyingStorage, keeper)
+ *
+ * val keeperMirror: Var[Map[String, Commit[ValueType]]] = keeper.mirror()
+ * val mirrorRef = new AtomicReference[Map[Pipeline.Name, Commit[Pipeline]]]
+ * keeperMirror.changes.register(Witness(mirrorRef))
+ *
+ * val servlet = new RainerServlet[ValueType] with RainerMirrorServlet[ValueType] {
+ *    override def commitStorage = wrappedStorage
+ *    override def valueDeserialization = implicitly[KeyValueDeserialization[DictValue]]
+ *    override def mirror = mirrorRef
  * }}}
  *
  */
