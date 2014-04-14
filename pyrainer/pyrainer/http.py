@@ -1,6 +1,7 @@
 import commit
 import json
 import urllib2
+import base64
 
 from util import bytes
 
@@ -17,8 +18,16 @@ class RainerClient:
 
   def list(self, all=False):
     """Get a dict of commit key -> metadata for the most recent versions."""
-    rsp  = urllib2.urlopen(self.base_uri + ("?all=yes" if all else ""))
+    rsp = urllib2.urlopen(self.base_uri + ("?all=yes" if all else ""))
     return json.loads(rsp.read())
+
+  def list_full(self, all=False):
+    """Get a dict of commit key -> RainerCommit object for the most recent versions."""
+    rsp = urllib2.urlopen(self.base_uri + "?payload_base64=yes" + ("&all=yes" if all else ""))
+    rsp_json = json.loads(rsp.read())
+    for key, value in rsp_json.iteritems():
+      rsp_json[key] = commit.RainerCommit(value, base64.b64decode(value['payload_base64']))
+    return rsp_json
 
   def get_commit(self, key, version=None):
     """Get commit object, possibly at a specific version."""
