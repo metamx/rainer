@@ -95,6 +95,7 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
             event.getType match {
               case INITIALIZED =>
                 cacheReady.countDown()
+
               case CHILD_ADDED | CHILD_UPDATED =>
                 val what = if (event.getType == CHILD_ADDED) "added" else "updated"
                 val commitIfDeserializable = fromKeyAndBytes(commitKey, commitPayload).catchEither[Exception]
@@ -114,10 +115,14 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
                     theMap = theMap - commitKey
                     updater.update(theMap)
                 }
+
               case CHILD_REMOVED =>
                 log.info("Commit removed: %s", commitKey)
                 theMap = theMap - commitKey
                 updater.update(theMap)
+
+              case x =>
+                log.debug("No action needed for PathChildrenCache event type: %s", x)
             }
           }
         }
