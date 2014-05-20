@@ -169,7 +169,7 @@ class RainerCommandLine:
       {"version" : int(commit.meta["version"]) + 1,
        "author"  : os.getlogin(),
        "comment" : ""},
-      commit.value
+      commit.value if commit.value is not None else ""
     )
 
   def prepare_commit(self, commit):
