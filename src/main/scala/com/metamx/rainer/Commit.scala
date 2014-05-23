@@ -24,7 +24,8 @@ import com.metamx.common.scala.untyped._
 import org.scala_tools.time.Imports._
 
 /**
- * Represents a key/value commit.
+ * Represents a key/value commit. The value is stored as a byte array, although Commits always know how to
+ * deserialize them into a useful ValueType, using a KeyValueDeserialization.
  *
  * @param meta Metadata for this comment.
  * @param payload Serialized value for this commit, or None if this is a tombstone commit.
@@ -48,10 +49,22 @@ class Commit[ValueType: KeyValueDeserialization](
   def mtime = meta.mtime
   def isEmpty = payload.isEmpty
 
+  /**
+   * Deserialized value for this commit. This is an Option (because payloads can be present, or not present) of an
+   * Either (because deserialization can succeed, or fail). If you are uninterested in this distinction, you can use
+   * the simpler "valueOption" method.
+   */
   def value: Option[Either[Exception, ValueType]] = payload map {
     bytes =>
       implicitly[KeyValueDeserialization[ValueType]].fromKeyAndBytes(key, bytes).catchEither[Exception]
   }
+
+  /**
+   * Deserialized value for this commit. This waves away the nuance of the "value" method, and represents
+   * missing payloads and failed deserializations both as Options. If you need to be able to distinguish between
+   * those two cases, or if you need access to the actual exception that was thrown, you should use "value".
+   */
+  def valueOption: Option[ValueType] = value.flatMap(_.right.toOption)
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[Commit[_]]
 

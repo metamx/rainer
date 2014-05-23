@@ -98,6 +98,7 @@ class CommitTest extends Spec
       commit2 must be(commit)
       commit2.hashCode() must be(commit.hashCode())
       commit2.value.flatMap(_.right.toOption) must be(Some(TestPayload("lol")))
+      commit2.valueOption must be(Some(TestPayload("lol")))
     }
 
     @Test
@@ -111,6 +112,7 @@ class CommitTest extends Spec
       evaluating {
         commit2.value.flatMap(_.left.toOption).foreach(throw _)
       } must throwA[JsonParseException]("""Unexpected character \('c' \(code 99\)\).*""".r)
+      commit2.valueOption must be(None)
     }
 
     @Test
@@ -127,6 +129,7 @@ class CommitTest extends Spec
       evaluating {
         commit2.value.flatMap(_.left.toOption).foreach(throw _)
       } must throwAn[JsonMappingException](""".*\bstring length must be even\b.*""".r)
+      commit2.valueOption must be(None)
     }
   }
 
