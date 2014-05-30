@@ -3,6 +3,7 @@ import difflib
 import errno
 import os
 import http
+import re
 import subprocess
 import sys
 import tempfile
@@ -110,7 +111,7 @@ class RainerCommandLine:
 
     try:
       # open EDITOR on the temp file
-      ecode  = subprocess.call([editor, tmp.name])
+      ecode  = subprocess.call([editor + " " + re.escape(tmp.name)], shell=True)
       if ecode != 0:
         raise Exception("Editor %s exited with code %d" % (editor, ecode))
 

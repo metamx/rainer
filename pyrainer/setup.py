@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
   name='pyrainer',
-  version='0.17',
+  version='0.18',
   author='gian',
   author_email='gianmerlino@gmail.com',
   packages=['pyrainer'],
