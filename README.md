@@ -154,9 +154,9 @@ import pyrainer.http
 
 client = pyrainer.http.RainerClient("http://localhost:8080/diary")
 
-commits = client.list()
+commits = client.list_full()
 for key in sorted(commits.keys()):
-  version = commits[key]['version']
+  version = commits[key].version
   print "%s [current version = %s]" % (key, str(version))
 
 hey = client.get_commit("hey")
