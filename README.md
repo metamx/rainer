@@ -167,16 +167,16 @@ client.post_commit({"key": "hey", "version": 2, "author": "gian", "comment": "ro
 
 ## Command-line client
 
-If you are running a RainerServlet, you can use the "rainer" command line tool interactively or in shell scripts.
+If you have pyrainer installed (```pip install pyrainer```), you can use the command line tool interactively or in shell scripts.
 
 ```
-$ bin/rainer --url http://localhost:8080/diary list
+$ python -m pyrainer.rainer --url http://localhost:8080/diary list
 foo     1       http://localhost:8080/diary/foo/1
 hey     6       http://localhost:8080/diary/hey/6
 
-$ bin/rainer --url http://localhost:8080/diary show hey
+$ python -m pyrainer.rainer --url http://localhost:8080/diary show hey
 {"hey":"whatsit"}
 
-$ rainer --url http://localhost:8080/diary edit hey
+$ python -m pyrainer.rainer --url http://localhost:8080/diary edit hey
 [...a wild $EDITOR appears!]
 ```
