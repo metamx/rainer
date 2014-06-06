@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
   name='pyrainer',
-  version='0.18',
+  version='0.19',
   author='gian',
   author_email='gianmerlino@gmail.com',
   packages=['pyrainer'],
@@ -10,5 +10,5 @@ setup(
   url='https://github.com/metamx/rainer',
   description='Python client for Rainer',
   long_description=open('README.md').read(),
-  install_requires=["termcolor >= 1.1.0"],
+  install_requires=["termcolor >= 1.1.0", "PyYaml >= 3.0"],
 )
