@@ -1,4 +1,6 @@
-## Rainer
+# Rainer
+
+<img width="175" align="right" src="https://cloud.githubusercontent.com/assets/1214075/3219469/f5fdd28c-eff5-11e3-9914-2e86429dfe79.jpg">
 
 Rainer helps you deal with namespaces of versioned key/value pairs called "commits". It includes a variety of APIs
 that can collectively provide a full audit trail, concurrency-safe updates, local caching, immediate cluster
