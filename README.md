@@ -1,11 +1,17 @@
 # Rainer
 
-<img width="175" align="right" src="https://cloud.githubusercontent.com/assets/1214075/3219469/f5fdd28c-eff5-11e3-9914-2e86429dfe79.jpg">
+<div style="float: left">
+<img width="175" src="https://cloud.githubusercontent.com/assets/1214075/3219469/f5fdd28c-eff5-11e3-9914-2e86429dfe79.jpg">
+</dev>
 
+<div style="float: left">
 Rainer helps you deal with namespaces of versioned key/value pairs called "commits". It includes a variety of APIs
 that can collectively provide a full audit trail, concurrency-safe updates, local caching, immediate cluster
 notifications, and easy client integration. The Rainer APIs can be used independently, or they can be used together as
 part of a powerful configuration management system.
+</div>
+
+<div style="clear: both" />
 
 ## Commits
 
