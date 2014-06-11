@@ -15,23 +15,21 @@
  * limitations under the License.
  */
 
-package com.metamx.rainer
+package com.metamx.rainer.test.helper
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.metamx.common.scala.Predef._
+import com.metamx.rainer.KeyValueDeserialization
 
-case class TestPayloadStrict(s: String)
-{
-  require(s.length % 2 == 0, "string length must be even")
-}
+case class TestPayload(s: String)
 
-object TestPayloadStrict
+object TestPayload
 {
   val jsonMapper = new ObjectMapper() withEffect {
     jm =>
       jm.registerModule(DefaultScalaModule)
   }
 
-  implicit val bytesSerialization = KeyValueDeserialization.usingJackson[TestPayloadStrict](jsonMapper)
+  implicit val bytesSerialization = KeyValueDeserialization.usingJackson[TestPayload](jsonMapper)
 }

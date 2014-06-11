@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package com.metamx.rainer
+package com.metamx.rainer.test.helper
 
 import com.metamx.common.scala.Logging
+import com.metamx.rainer.{Commit, CommitKeeper}
 import com.twitter.util.{Witness, Closable}
 import java.util.concurrent.atomic.AtomicReference
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}

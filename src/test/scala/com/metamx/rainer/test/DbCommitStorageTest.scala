@@ -15,21 +15,19 @@
  * limitations under the License.
  */
 
-package com.metamx.rainer
+package com.metamx.rainer.test
 
 import com.metamx.common.scala.db.DB
-import com.simple.simplespec.Spec
+import com.metamx.rainer.test.helper.{CommitStorageTests, TestPayloadStrict, TestPayload, DerbyCommitTableWithoutIsEmpty, DerbyCommitTable, DerbyMemoryDB}
+import com.metamx.rainer.{DbCommitStorageMixin, CommitStorage, DbCommitStorage}
 import java.util.UUID
 
-class DbCommitStorageTest extends Spec
-{
-  class Derby extends DerbyTests {
-    override def createDb() = new DerbyMemoryDB(UUID.randomUUID().toString) with DerbyCommitTable
-  }
+class DerbyTest extends DerbyTests {
+  override def createDb() = new DerbyMemoryDB(UUID.randomUUID().toString) with DerbyCommitTable
+}
 
-  class DerbyWithoutIsEmpty extends DerbyTests {
-    override def createDb() = new DerbyMemoryDB(UUID.randomUUID().toString) with DerbyCommitTableWithoutIsEmpty
-  }
+class DerbyWithoutIsEmptyTest extends DerbyTests {
+  override def createDb() = new DerbyMemoryDB(UUID.randomUUID().toString) with DerbyCommitTableWithoutIsEmpty
 }
 
 trait DerbyTests extends CommitStorageTests

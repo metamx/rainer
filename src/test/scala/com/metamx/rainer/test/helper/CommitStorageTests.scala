@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 
-package com.metamx.rainer
+package com.metamx.rainer.test.helper
 
-import com.metamx.common.scala.Jackson
-import org.junit.Test
-import org.joda.time.DateTime
 import com.fasterxml.jackson.databind.JsonMappingException
-import com.simple.simplespec.Spec
+import com.metamx.common.scala.Jackson
+import com.metamx.rainer.{Commit, CommitStorage}
+import com.simple.simplespec.Matchers
+import org.joda.time.DateTime
+import org.junit.Test
 
-trait CommitStorageTests extends Spec
+trait CommitStorageTests extends Matchers
 {
   def TP(s: String) = {
     Some(Jackson.bytes(TestPayload(s)))
