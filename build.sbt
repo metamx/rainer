@@ -32,11 +32,10 @@ def ScalatraCross = CrossVersion.binaryMapped {
 }
 
 libraryDependencies ++= Seq(
-  "com.metamx" %% "scala-util" % "1.8.9",
-  "org.slf4j" % "slf4j-api" % "1.6.5",
+  "com.metamx" %% "scala-util" % "1.8.17",
   "javax.servlet" % "javax.servlet-api" % "3.0.1",
   "org.eclipse.jetty" % "jetty-servlet" % "8.1.10.v20130312",
-  "com.google.guava" % "guava" % "14.0.1",
+  "com.google.guava" % "guava" % "15.0",
   "org.scalatra" % "scalatra" % "2.2.1" cross ScalatraCross
 )
 
