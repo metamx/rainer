@@ -19,9 +19,9 @@ package com.metamx.rainer.test
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.metamx.common.scala.Jackson
-import com.metamx.rainer.test.helper.{TestPayloadStrict, TestPayload, RainerTests}
-import com.metamx.rainer.{CommitStorage, ConcurrentCommitException, Commit, CommitKeeper}
-import com.simple.simplespec.{Matchers, Spec}
+import com.metamx.rainer.test.helper.{RainerTests, TestPayload, TestPayloadStrict}
+import com.metamx.rainer.{Commit, CommitKeeper, CommitStorage, ConcurrentCommitException}
+import com.simple.simplespec.Matchers
 import com.twitter.util.Await
 import org.junit.Test
 import org.scala_tools.time.Imports._

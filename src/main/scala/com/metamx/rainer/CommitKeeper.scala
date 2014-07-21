@@ -20,12 +20,12 @@ package com.metamx.rainer
 import com.metamx.common.scala.Logging
 import com.metamx.common.scala.concurrent.everyFuzzy
 import com.metamx.common.scala.exception._
-import com.twitter.util.{Await, Future, Time, Closable, Var}
+import com.twitter.util.{Await, Closable, Future, Time, Var}
 import java.util.concurrent.CountDownLatch
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type._
-import org.apache.curator.framework.recipes.cache.{PathChildrenCacheEvent, PathChildrenCacheListener, PathChildrenCache}
-import org.apache.curator.framework.recipes.leader.{LeaderSelectorListenerAdapter, LeaderSelector}
+import org.apache.curator.framework.recipes.cache.{PathChildrenCache, PathChildrenCacheEvent, PathChildrenCacheListener}
+import org.apache.curator.framework.recipes.leader.{LeaderSelector, LeaderSelectorListenerAdapter}
 import org.apache.curator.utils.ZKPaths
 import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NoNodeException

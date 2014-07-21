@@ -111,21 +111,26 @@ trait CommitStorageTests extends Matchers
   @Test
   def testRestoreCorrupt()
   {
-    withPairedStorages {
-      (storage, storageStrict) =>
-        val theCommit = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
-        storage.save(theCommit)
-        storage.get("what") must be(Some(theCommit))
-        val strictCommit = storageStrict.get("what").get
-        strictCommit.key must be("what")
-        strictCommit.version must be(1)
-        strictCommit.author must be("nobody")
-        strictCommit.comment must be("nothing")
-        strictCommit.mtime must be(new DateTime(1))
-        val eOption = strictCommit.value.get.left.toOption
-        eOption.isDefined must be(true)
-        eOption.get must beA[JsonMappingException]
-        eOption.get.getMessage must contain("string length must be even")
+    try {
+      withPairedStorages {
+        (storage, storageStrict) =>
+          val theCommit = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+          storage.save(theCommit)
+          storage.get("what") must be(Some(theCommit))
+          val strictCommit = storageStrict.get("what").get
+          strictCommit.key must be("what")
+          strictCommit.version must be(1)
+          strictCommit.author must be("nobody")
+          strictCommit.comment must be("nothing")
+          strictCommit.mtime must be(new DateTime(1))
+          val eOption = strictCommit.value.get.left.toOption
+          eOption.isDefined must be(true)
+          eOption.get must beA[JsonMappingException]
+          eOption.get.getMessage must contain("string length must be even")
+      }
+    } catch {
+      case e: CannotPairStoragesException =>
+        // Suppress.
     }
   }
 
@@ -148,3 +153,5 @@ trait CommitStorageTests extends Matchers
     }
   }
 }
+
+class CannotPairStoragesException extends Exception
