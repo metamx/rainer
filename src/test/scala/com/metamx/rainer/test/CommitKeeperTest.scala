@@ -55,7 +55,7 @@ class CommitKeeperTest extends Matchers with RainerTests
             val commits = new CommitKeeper[TestPayload](curator, "/hey")
             val (c, theMap) = asMap(commits)
             try {
-              val theCommit = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+              val theCommit = Commit.fromBytes[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
               commits.save(theCommit)
               commits.heads must be(Map("what" -> theCommit))
               within(2.seconds) {
@@ -77,8 +77,8 @@ class CommitKeeperTest extends Matchers with RainerTests
             val commits = new CommitKeeper[TestPayload](curator, "/hey")
             val (c, theMap) = asMap(commits)
             try {
-              val commit1 = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
-              val commit2 = Commit[TestPayload]("what", 2, TP("yyy"), "nobody", "nothing", new DateTime(1))
+              val commit1 = Commit.fromBytes[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+              val commit2 = Commit.fromBytes[TestPayload]("what", 2, TP("yyy"), "nobody", "nothing", new DateTime(1))
               commits.save(commit1)
               commits.save(commit2)
               evaluating {
@@ -107,9 +107,9 @@ class CommitKeeperTest extends Matchers with RainerTests
             val (c, theMap) = asMap(commits)
             val (cs, theMapStrict) = asMap(commitsStrict)
             try {
-              val commit1 = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+              val commit1 = Commit.fromBytes[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
               val commit1Strict = Commit[TestPayloadStrict]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
-              val commit2 = Commit[TestPayload]("what", 2, TP("xx"), "nobody", "nothing", new DateTime(1))
+              val commit2 = Commit.fromBytes[TestPayload]("what", 2, TP("xx"), "nobody", "nothing", new DateTime(1))
               val commit2Strict = Commit[TestPayloadStrict]("what", 2, TP("xx"), "nobody", "nothing", new DateTime(1))
               commits.save(commit1)
               within(2.seconds) {
@@ -146,10 +146,10 @@ class CommitKeeperTest extends Matchers with RainerTests
             val commits = new CommitKeeper[TestPayload](curator, "/hey")
             val (c, theMap) = asMap(commits)
             try {
-              val commit1 = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
-              val commit2a = Commit[TestPayload]("what", 2, TP("yyy"), "nobody", "nothing", new DateTime(1))
-              val commit2b = Commit[TestPayload]("what", 2, TP("yyy2"), "nobody", "nothing", new DateTime(1))
-              val commit2c = Commit[TestPayload]("what", 2, TP("yyy"), "nobody2", "nothing", new DateTime(1))
+              val commit1 = Commit.fromBytes[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+              val commit2a = Commit.fromBytes[TestPayload]("what", 2, TP("yyy"), "nobody", "nothing", new DateTime(1))
+              val commit2b = Commit.fromBytes[TestPayload]("what", 2, TP("yyy2"), "nobody", "nothing", new DateTime(1))
+              val commit2c = Commit.fromBytes[TestPayload]("what", 2, TP("yyy"), "nobody2", "nothing", new DateTime(1))
               commits.save(commit1)
               commits.save(commit2a)
               evaluating {
@@ -209,8 +209,8 @@ class CommitKeeperTest extends Matchers with RainerTests
             val commits = new CommitKeeper[TestPayload](curator, "/hey")
             val (c, theMap) = asMap(commits)
             try {
-              val commit1 = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
-              val commit2 = Commit[TestPayload]("what", 2, None, "nobody", "nothing", new DateTime(1))
+              val commit1 = Commit.fromBytes[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+              val commit2 = Commit.fromBytes[TestPayload]("what", 2, None, "nobody", "nothing", new DateTime(1))
               commits.save(commit1)
               commits.save(commit1)
               commits.heads must be(Map("what" -> commit1))
@@ -245,7 +245,7 @@ class CommitKeeperTest extends Matchers with RainerTests
       cluster =>
         withCurator(cluster) {
           curator =>
-            val theCommit = Commit[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+            val theCommit = Commit.fromBytes[TestPayload]("what", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
             val commitMap = Map("what" -> theCommit)
             val storage = new CommitStorage[TestPayload] {
               override def start() {}

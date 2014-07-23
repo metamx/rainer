@@ -41,6 +41,13 @@ class CommitTest extends Matchers
   }
 
   @Test
+  def testToStringSimpleCreatedFromActualObject()
+  {
+    val commit = Commit.fromValue("hey", 1, Some(TestPayload("lol")), "nobody", "nothing", new DateTime(2))
+    commit.toString must be("Commit(hey,1,[11 bytes],nobody,nothing,1970-01-01T00:00:00.002Z)")
+  }
+
+  @Test
   def testToStringEmpty()
   {
     val commit = Commit[TestPayload]("hey", 1, None, "nobody", "nothing", new DateTime(2))

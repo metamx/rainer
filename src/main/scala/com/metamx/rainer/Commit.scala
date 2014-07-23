@@ -114,9 +114,34 @@ object Commit
     comment: Commit.Comment,
     mtime: DateTime
   ): Commit[ValueType] = {
+    fromBytes(key, version, payload, author, comment, mtime)
+  }
+
+  def fromBytes[ValueType: KeyValueDeserialization](
+    key: Commit.Key,
+    version: Int,
+    payload: Option[Array[Byte]],
+    author: Commit.Author,
+    comment: Commit.Comment,
+    mtime: DateTime
+  ): Commit[ValueType] = {
     Commit(
       CommitMetadata(key, version, author, comment, mtime, payload.isEmpty),
       payload
+    )
+  }
+
+  def fromValue[ValueType: KeyValueDeserialization: KeyValueSerialization](
+    key: Commit.Key,
+    version: Int,
+    payload: Option[ValueType],
+    author: Commit.Author,
+    comment: Commit.Comment,
+    mtime: DateTime
+  ): Commit[ValueType] = {
+    Commit(
+      CommitMetadata(key, version, author, comment, mtime, payload.isEmpty),
+      payload map (implicitly[KeyValueSerialization[ValueType]].toBytes(key, _))
     )
   }
 

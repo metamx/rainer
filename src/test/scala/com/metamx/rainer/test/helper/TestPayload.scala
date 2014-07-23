@@ -20,7 +20,7 @@ package com.metamx.rainer.test.helper
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.metamx.common.scala.Predef._
-import com.metamx.rainer.KeyValueDeserialization
+import com.metamx.rainer.{KeyValueDeserialization, KeyValueSerialization}
 
 case class TestPayload(s: String)
 
@@ -31,5 +31,7 @@ object TestPayload
       jm.registerModule(DefaultScalaModule)
   }
 
-  implicit val bytesSerialization = KeyValueDeserialization.usingJackson[TestPayload](jsonMapper)
+  implicit val deserialization = KeyValueDeserialization.usingJackson[TestPayload](jsonMapper)
+
+  implicit val serialization = KeyValueSerialization.usingJackson[TestPayload](jsonMapper)
 }
