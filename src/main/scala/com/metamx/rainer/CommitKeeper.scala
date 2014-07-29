@@ -78,14 +78,21 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
   }
 
   /**
-   * Live-updating view of all present commits. Absense of a commit in the map is not a guarantee of true absense
-   * of the commit. Commits can also be spuriously missing due to parsing errors.
+   * Live-updating view of all present commits. The first value seen by the returned Var will be a fully-initialized
+   * cache. Future values will reflect each update in the order they are seen. This behavior is backed by a Curator
+   * PathChildrenCache.
+   *
+   * Note that absence of a commit in the map is not a guarantee of true absence of the commit. Commits can be
+   * spuriously missing due to parsing errors.
    */
   def mirror(): Var[Map[Commit.Key, Commit[ValueType]]] = Var.async[Map[Commit.Key, Commit[ValueType]]](Map.empty) {
     updater =>
+      // Synchronizes access to cacheReady and theMap; also allows notifications when the cache is ready.
+      val cacheLock = new AnyRef
+      var cacheReady = false
+      var theMap = Map.empty[Commit.Key, Commit[ValueType]]
+
       val cache = new PathChildrenCache(curator, dataPath, true)
-      val cacheReady = new CountDownLatch(1)
-      @volatile var theMap = Map.empty[Commit.Key, Commit[ValueType]]
       cache.getListenable.addListener(
         new PathChildrenCacheListener
         {
@@ -94,7 +101,11 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
             def commitPayload = event.getData.getData
             event.getType match {
               case INITIALIZED =>
-                cacheReady.countDown()
+                cacheLock synchronized {
+                  cacheReady = true
+                  cacheLock.notifyAll()
+                  updater.update(theMap)
+                }
 
               case CHILD_ADDED | CHILD_UPDATED =>
                 val what = if (event.getType == CHILD_ADDED) "added" else "updated"
@@ -102,8 +113,12 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
                 commitIfDeserializable match {
                   case Right(value) =>
                     log.info("Commit %s: %s: %s", what, commitKey, value)
-                    theMap = theMap + (commitKey -> value)
-                    updater.update(theMap)
+                    cacheLock synchronized {
+                      theMap = theMap + (commitKey -> value)
+                      if (cacheReady) {
+                        updater.update(theMap)
+                      }
+                    }
 
                   case Left(e) =>
                     val trimThreshold = 1024
@@ -112,14 +127,22 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
                       case bytes => new String(bytes.take(trimThreshold)) + " ..."
                     }
                     log.error(e, "Commit %s with bad serialization: %s, data = %s", what, commitKey, trimmed)
-                    theMap = theMap - commitKey
-                    updater.update(theMap)
+                    cacheLock synchronized {
+                      theMap = theMap - commitKey
+                      if (cacheReady) {
+                        updater.update(theMap)
+                      }
+                    }
                 }
 
               case CHILD_REMOVED =>
                 log.info("Commit removed: %s", commitKey)
-                theMap = theMap - commitKey
-                updater.update(theMap)
+                cacheLock synchronized {
+                  theMap = theMap - commitKey
+                  if (cacheReady) {
+                    updater.update(theMap)
+                  }
+                }
 
               case x =>
                 log.debug("No action needed for PathChildrenCache event type: %s", x)
@@ -128,7 +151,11 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
         }
       )
       cache.start(PathChildrenCache.StartMode.POST_INITIALIZED_EVENT)
-      cacheReady.await()
+      cacheLock synchronized {
+        while (!cacheReady) {
+          cacheLock.wait()
+        }
+      }
       new Closable {
         override def close(deadline: Time) = Future(cache.close())
       }

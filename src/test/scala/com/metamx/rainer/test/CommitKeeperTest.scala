@@ -19,10 +19,12 @@ package com.metamx.rainer.test
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.metamx.common.scala.Jackson
+import com.metamx.rainer.Commit.Key
 import com.metamx.rainer.test.helper.{RainerTests, TestPayload, TestPayloadStrict}
 import com.metamx.rainer.{Commit, CommitKeeper, CommitStorage, ConcurrentCommitException}
 import com.simple.simplespec.Matchers
-import com.twitter.util.Await
+import com.twitter.util.{Witness, Await}
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import org.junit.Test
 import org.scala_tools.time.Imports._
 
@@ -89,6 +91,43 @@ class CommitKeeperTest extends Matchers with RainerTests
               within(2.seconds) {
                 theMap.get().get("what") must be(Some(commit2))
               }
+            } finally {
+              Await.result(c.close())
+            }
+        }
+    }
+  }
+
+  @Test
+  def testMirrorCreation() {
+    withCluster {
+      cluster =>
+        withCurator(cluster) {
+          curator =>
+            val commits = new CommitKeeper[TestPayload](curator, "/hey")
+            val commit1 = Commit.fromBytes[TestPayload]("hey", 1, TP("xxx"), "nobody", "nothing", new DateTime(1))
+            val commit2 = Commit.fromBytes[TestPayload]("there", 1, TP("yyy"), "nobody", "nothing", new DateTime(1))
+            val commit3 = Commit.fromBytes[TestPayload]("what", 1, TP("yyy"), "nobody", "nothing", new DateTime(1))
+            commits.save(commit1)
+            commits.save(commit2)
+            commits.save(commit3)
+
+            // Track how many times the witness is notified.
+            val num = new AtomicLong()
+            val ref = new AtomicReference[Map[Commit.Key, Commit[TestPayload]]]()
+            val c = commits.mirror().changes.register(new Witness[Map[Key, Commit[TestPayload]]] {
+              override def notify(note: Map[Key, Commit[TestPayload]]) {
+                num.incrementAndGet()
+                ref.set(note)
+              }
+            })
+            try {
+              // Newly created mirrors should update immediately.
+              ref.get() must be(Map("hey" -> commit1, "there" -> commit2, "what" -> commit3))
+
+              // There should be no further updates, since we're not changing anything.
+              Thread.sleep(1500)
+              num.get() must be(1)
             } finally {
               Await.result(c.close())
             }
