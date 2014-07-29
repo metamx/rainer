@@ -23,19 +23,23 @@ def decorate_argparser(parser, default_url):
   subparser = parser.add_subparsers(title='commands', dest='mode')
   subparsers = {}
 
-  subparsers["commit"]   = subparser.add_parser('commit')
-  subparsers["uncommit"] = subparser.add_parser('uncommit')
-  subparsers["edit"]     = subparser.add_parser('edit')
-  subparsers["prepare"]  = subparser.add_parser('prepare')
-  subparsers["show"]     = subparser.add_parser('show')
-  subparsers["log"]      = subparser.add_parser('log')
+  subparsers["commit"]       = subparser.add_parser('commit')
+  subparsers["commit-value"] = subparser.add_parser('commit-value')
+  subparsers["uncommit"]     = subparser.add_parser('uncommit')
+  subparsers["edit"]         = subparser.add_parser('edit')
+  subparsers["prepare"]      = subparser.add_parser('prepare')
+  subparsers["show"]         = subparser.add_parser('show')
+  subparsers["log"]          = subparser.add_parser('log')
 
-  for sp in subparsers.values():
-    sp.add_argument('key', metavar='key', nargs=1, help='commit key')
-    sp.add_argument('version', metavar='version', type=int, nargs="?", help='commit version')
+  for name, parser in subparsers.iteritems():
+    parser.add_argument('key', metavar='key', nargs=1, help='commit key')
+    if name != "commit":
+      parser.add_argument('version', metavar='version', type=int, nargs="?", help='commit version')
 
   subparsers["list"] = subparser.add_parser('list')
   subparsers["list"].add_argument('-A', '--all', action='store_true')
+
+  subparsers["commit-value"].add_argument('-m', '--message', type=str, required=True, help='commit message')
 
 def make_client(args):
   return http.RainerClient(args.url)
@@ -64,6 +68,9 @@ def run(default_url=None):
 
   elif args.mode == "commit":
     make_cli(args).action_commit(args.key[0])
+
+  elif args.mode == "commit-value":
+    make_cli(args).action_commit_value(args.key[0], args.version, args.message)
 
   elif args.mode == "uncommit":
     make_cli(args).action_uncommit(args.key[0], args.version)

@@ -41,6 +41,16 @@ class RainerCommandLine:
   def action_commit(self, key):
     print self.post_prepared_commit(key, sys.stdin.read())
 
+  def action_commit_value(self, key, version, message):
+    if version:
+      the_version = version
+    else:
+      the_version = 1
+    print self.client.post_commit(
+      {"key": key, "version": the_version, "author": os.getlogin(), "comment": message},
+      sys.stdin.read()
+    )
+
   def action_log(self, key, version=None):
     """CLI log action."""
     old_stdout = sys.stdout
