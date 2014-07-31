@@ -89,7 +89,7 @@ val previousFoo = foo flatMap (x => storage.get(x.key, x.version - 1))
 previousFoo foreach (x => storage.save(Commit.fromBytes(x.key, x.version + 2, x.payload, "me", "Reverting foo", DateTime.now))
 ```
 
-## CommitKeeper: ZooKeeper views
+### CommitKeeper: ZooKeeper views
 
 The CommitKeeper class represents the most recent versions of each commit stored in ZooKeeper. It supports
 on-demand access, live-updating views, and instant notifications. It does not keep a full history for each key; only
