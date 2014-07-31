@@ -2,8 +2,8 @@
 
 Rainer is a configuration management library that is based around versioned key/value pairs called "commits". We
 created it after we noticed that we had a lot of services that each managed configuration in slightly different ways
-(with slightly different flaws!). It is composed of a set of APIs can be used independently, or together as part of a
-powerful configuration management system. In addition to key/value access, it can also provide:
+(with slightly different flaws!). It is composed of a set of APIs that can be used independently, or together as
+part of a powerful configuration management system. In addition to key/value access, it can also provide:
 
 - Full audit trail of historical commits for each key, including who, why, and when they were committed.
 - Ability to detect concurrent modifications and prevent users from clobbering each other.
