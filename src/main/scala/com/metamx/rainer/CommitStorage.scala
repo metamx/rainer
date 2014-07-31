@@ -24,18 +24,40 @@ import com.metamx.common.scala.Logging
  */
 trait CommitStorage[ValueType]
 {
+  /**
+   * Acquire or set up any necessary resources. Behavior of other methods is undefined before start() is called.
+   */
   def start()
 
+  /**
+   * Release all held resources. Behavior of other methods is undefined after stop() is called.
+   */
   def stop()
 
+  /**
+   * Returns all current commits (highest version for each key).
+   */
   def heads: Map[Commit.Key, Commit[ValueType]]
 
+  /**
+   * Returns all current commits (highest version for each key) that are also non-empty.
+   */
   def headsNonEmpty: Map[Commit.Key, Commit[ValueType]]
 
+  /**
+   * Get the current commit (highest version) for a particular key.
+   */
   def get(key: Commit.Key): Option[Commit[ValueType]]
 
+  /**
+   * Get a particular commit for a particular key.
+   */
   def get(key: Commit.Key, version: Int): Option[Commit[ValueType]]
 
+  /**
+   * Saves a new commit. The version should be one higher than the previous commit's version for the same key. This
+   * method will throw a {{{CommitOrderingException}}} if the storage implementation detects violation of that rule.
+   */
   def save(commit: Commit[ValueType])
 }
 

@@ -61,16 +61,12 @@ class DbCommitStorage[ValueType : KeyValueDeserialization](db: DB with DbCommitS
       // Capture current max(version)
       val maxVersionSql = """select max(version) from :table: where name = ?""".replace(":table:", tableName)
       val maxVersion = db.select(maxVersionSql, commit.key).head.values.head match {
-        case null => 0L
+        case null => 0
         case x => x.asInstanceOf[Int]
       }
       // User-supplied version must be max(version) + 1
       if (commit.version != maxVersion + 1) {
-        throw new IllegalArgumentException(
-          "Concurrent modification: %s: requested version (%s) was not next available version (%s)".format(
-            commit.key, commit.version, maxVersion + 1
-          )
-        )
+        throw new CommitOrderingException(commit.key, maxVersion + 1, commit.version)
       }
       // Attempt to insert the new commit. If it fails, this means someone else beat us to it.
       if (tableHasIsEmpty) {

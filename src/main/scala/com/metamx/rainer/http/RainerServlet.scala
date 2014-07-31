@@ -21,9 +21,9 @@ import com.google.common.io.ByteStreams
 import com.metamx.common.scala.Logging
 import com.metamx.common.scala.exception._
 import com.metamx.common.scala.timekeeper.{SystemTimekeeper, Timekeeper}
-import com.metamx.rainer.{CommitMetadata, KeyValueDeserialization, Commit, CommitStorage}
+import com.metamx.rainer.{CommitOrderingException, CommitMetadata, KeyValueDeserialization, Commit, CommitStorage}
 import org.joda.time.DateTime
-import org.scalatra.{Ok, BadRequest, ScalatraServlet}
+import org.scalatra.{Conflict, Ok, BadRequest, ScalatraServlet}
 
 trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase with Logging
 {
@@ -95,9 +95,18 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase wi
             comment,
             mtime
           )(valueDeserialization)
-          commitStorage.save(commit).catchEither[IllegalArgumentException] match {
+          commitStorage.save(commit).catchEither[Exception] match {
             case Right(()) =>
               Ok(json(commit.meta.asMap))
+
+            case Left(e: CommitOrderingException) =>
+              Conflict(json(Map(
+                "conflict" -> Map(
+                  "key" -> e.key,
+                  "expectedVersion" -> e.expectedVersion,
+                  "providedVersion" -> e.providedVersion
+                )
+              )))
 
             case Left(e: IllegalArgumentException) =>
               // This is likely a user error.

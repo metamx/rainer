@@ -19,7 +19,7 @@ package com.metamx.rainer.test.helper
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.metamx.common.scala.Jackson
-import com.metamx.rainer.{Commit, CommitStorage}
+import com.metamx.rainer.{CommitOrderingException, Commit, CommitStorage}
 import com.simple.simplespec.Matchers
 import org.joda.time.DateTime
 import org.junit.Test
@@ -73,14 +73,14 @@ trait CommitStorageTests extends Matchers
         val commit3 = Commit[TestPayload]("what", 3, TP("xxx"), "nobody", "nothing", new DateTime(1))
         evaluating {
           storage.save(commit3)
-        } must throwAn[IllegalArgumentException](""".*Concurrent modification: what: .*""".r)
+        } must throwA[CommitOrderingException](""".*Concurrent modification: what: .*""".r)
         storage.save(commit1)
         evaluating {
           storage.save(commit1)
-        } must throwAn[IllegalArgumentException](""".*Concurrent modification: what: .*""".r)
+        } must throwA[CommitOrderingException](""".*Concurrent modification: what: .*""".r)
         evaluating {
           storage.save(commit3)
-        } must throwAn[IllegalArgumentException](""".*Concurrent modification: what: .*""".r)
+        } must throwA[CommitOrderingException](""".*Concurrent modification: what: .*""".r)
         storage.heads must be(Map("what" -> commit1))
         storage.headsNonEmpty must be(Map("what" -> commit1))
         storage.get("what") must be(Some(commit1))
@@ -148,7 +148,7 @@ trait CommitStorageTests extends Matchers
         hookedStorage.save(theCommit)
         evaluating {
           hookedStorage.save(theCommit)
-        } must throwAn[IllegalArgumentException](""".*Concurrent modification: what: .*""".r)
+        } must throwA[CommitOrderingException](""".*Concurrent modification: what: .*""".r)
         commits must be(1)
     }
   }

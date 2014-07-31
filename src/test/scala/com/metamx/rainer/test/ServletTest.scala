@@ -421,8 +421,9 @@ class ServletTest extends Matchers with RainerTests
           "X-Rainer-Author" -> "dude",
           "X-Rainer-Comment" -> "stuff"
         )) {
-          tester.body must contain("Concurrent modification")
-          tester.status must be(400)
+          Jackson.parse[Dict](tester.body) must
+            be(Map("conflict" -> Map("key" -> "what", "providedVersion" -> 2, "expectedVersion" -> 1)))
+          tester.status must be(409)
         }
     }
   }

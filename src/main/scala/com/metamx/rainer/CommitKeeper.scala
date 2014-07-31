@@ -275,7 +275,7 @@ class CommitKeeper[ValueType : KeyValueDeserialization](
           try {
             save(commit)
           } catch {
-            case e: ConcurrentCommitException =>
+            case e: CommitOrderingException =>
               // Suppress, we'll just try again later
               log.warn(e, "Failed to publish commit, will try again soon: %s", commit.key)
             case e: Throwable =>

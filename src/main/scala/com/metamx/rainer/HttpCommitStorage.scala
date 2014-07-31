@@ -22,7 +22,7 @@ import com.google.common.io.BaseEncoding
 import com.metamx.common.scala.Jackson
 import com.metamx.common.scala.Predef._
 import com.metamx.common.scala.net.uri._
-import com.metamx.common.scala.untyped.{str, dict, Dict}
+import com.metamx.common.scala.untyped.{str, dict, int, Dict}
 import com.metamx.rainer.http.RainerServlet
 import com.twitter.finagle.Service
 import com.twitter.util.{Future, Await}
@@ -76,7 +76,7 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
             req.setContent(ChannelBuffers.wrappedBuffer(bytes))
         }
       )
-    Await.result(response.map(failOnErrors))
+    Await.result(response.map(throwOrderingExceptions).map(failOnErrors))
   }
 
   private def uri(suffix: String, queryString: Option[String]): URI = {
@@ -131,6 +131,34 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
           (response.getStatus.getCode, response.getStatus.getReasonPhrase, response.getContent.toString(Charsets.UTF_8))
       )
     }
+  }
+
+  /**
+   * Detect and throw CommitOrderingExceptions if present; otherwise don't change the response.
+   */
+  private def throwOrderingExceptions(response: HttpResponse) = {
+    // Maybe throw an exception.
+    if (response.getStatus.getCode == 409) {
+      val orderingException: Option[CommitOrderingException] = try {
+        val d = Jackson.parse[Dict](response.getContent.toString(Charsets.UTF_8))
+        d.get("conflict").map(dict(_)) map {
+          conflictDict =>
+            new CommitOrderingException(
+              str(conflictDict("key")),
+              int(conflictDict("expectedVersion")),
+              int(conflictDict("providedVersion"))
+            )
+        }
+      } catch {
+        case e: Exception =>
+          // suppress
+          None
+      }
+      orderingException foreach (throw _)
+    }
+
+    // Otherwise don't change the response.
+    response
   }
 
   /**

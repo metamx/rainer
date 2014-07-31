@@ -44,11 +44,8 @@ class InMemoryCommitStorage[ValueType] extends CommitStorage[ValueType]
 
   override def save(commit: Commit[ValueType]) = lock.synchronized {
     val nextVersion = commits.get(commit.key).map(_.size + 1).getOrElse(1)
-    if (commits.get(commit.key).size != commit.version - 1) {
-      throw new IllegalArgumentException(
-        "Concurrent modification: %s: requested version (%s) was not next available version (%s)" format
-          (commit.key, commit.version, nextVersion)
-      )
+    if (nextVersion != commit.version) {
+      throw new CommitOrderingException(commit.key, nextVersion, commit.version)
     }
     commits.getOrElseUpdate(commit.key, ArrayBuffer[Commit[ValueType]]()) += commit
   }

@@ -23,7 +23,7 @@ import com.metamx.rainer.Commit.Key
 import com.metamx.rainer.test.helper.{RainerTests, TestPayload, TestPayloadStrict}
 import com.metamx.rainer.{Commit, CommitKeeper, CommitStorage, ConcurrentCommitException}
 import com.simple.simplespec.Matchers
-import com.twitter.util.{Witness, Await}
+import com.twitter.util.{Await, Witness}
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import org.junit.Test
 import org.scala_tools.time.Imports._
