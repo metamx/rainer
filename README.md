@@ -1,9 +1,14 @@
 # <img width="175" alt="Rainer" src="https://cloud.githubusercontent.com/assets/1214075/3766893/c5322fb2-18c8-11e4-8a92-08a8e45bc5ca.jpg" />
 
-Rainer is a configuration management library that is based around versioned key/value pairs called "commits". It
-includes a variety of APIs that can collectively provide a full audit trail, concurrency-safe updates, local caching,
-immediate notifications, and easy client integration. The Rainer APIs can be used independently, or they can be used
-together as part of a powerful configuration management system.
+Rainer is a configuration management library that is based around versioned key/value pairs called "commits". It is
+composed of a set of APIs can be used independently, or together as part of a powerful configuration management system.
+In addition to key/value access, it can also provide:
+
+- Full audit trail of historical commits for each key, including who, why, and when they were committed.
+- Ability to detect concurrent modifications and prevent users from clobbering each other.
+- Extensible to handle a variety of storage backends and commit payload types.
+- Optional ZooKeeper-backed views and notifications, for immediate cluster-wide updates.
+- Optional HTTP API along with clients for the JVM, Python, and the command line.
 
 ## Commits
 
