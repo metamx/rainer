@@ -118,14 +118,13 @@ Await.result(c.close())
 ### Using CommitKeeper with CommitStorage
 
 Combining a CommitStorage with a CommitKeeper is a common pattern used for managing configuration of a cluster of
-machines. The "Rainers" builder does this for you, but you can also do it manually.
+machines.  Combined setups can provide full-history journaled updates in an RDBMS, coupled with low latency
+notifications through ZooKeeper. The idea is to do all of your saves through a keeperPublishing CommitStorage (which
+will update ZooKeeper any time you save something) and to do your reads through a mirror provided by a CommitKeeper. To
+prevent inopportune crashes or out of band ZooKeeper modifications from causing ZooKeeper to become out of sync, an
+autoPublisher can periodically detect and push any unpushed updates from your storage.
 
-Combined setups can provide full-history journaled updates in an RDBMS, coupled with low latency notifications
-through ZooKeeper. The idea is to do all of your saves through a keeperPublishing CommitStorage (which will update
-ZooKeeper any time you save something) and to do your reads through a mirror provided by a CommitKeeper. To prevent
-inopportune crashes or out of band ZooKeeper modifications from causing ZooKeeper to become out of sync, you can also
-use an autoPublisher to periodically push any unpushed updates from your storage. This can all be done with something
-like:
+The "Rainers" builder sets all of this up for you, but you can also do it manually with something like:
 
 ```scala
 // During setup, link your underlying storage and keeper together.
@@ -134,15 +133,23 @@ val storage = CommitStorage.keeperPublishing(underlyingStorage, keeper)
 val autoPublisher = keeper.autoPublisher(storage, period, periodFuzz)
 autoPublisher.start()
 
+// When your application exits, shut down your autoPublisher.
+Await.result(autoPublisher.close())
+```
+
+When using a linked CommitStorage and CommitKeeper, make sure to send writes through the CommitStorage only. This is
+because the CommitStorage is treated as the system of record.
+
+```scala
 // You can get a mirror from your keeper, which will now reflect the most recent commits from your storage.
 val mirror: Var[Map[String, Commit[ValueType]]] = keeper.mirror()
 
-// When you save to the storage, ZooKeeper will be updated automatically.
-// Don't save using the keeper!
-storage.save(someCommit)
+// Which, for example, you can use to update an AtomicReference:
+val ref = new AtomicReference[Map[String, Commit[ValueType]]]
+val c = mirror.changes.register(Witness(ref))
 
-// When your application exits, shut down your autoPublisher.
-Await.result(autoPublisher.close())
+// When you save to the storage, ZooKeeper and the mirror will be updated automatically. (Don't save using the keeper!)
+storage.save(someCommit)
 ```
 
 ### Using CommitStorage without CommitKeeper
@@ -153,8 +160,9 @@ refreshes periodically.
 
 ### Using CommitKeeper without CommitStorage
 
-You can use CommitKeeper by itself, too, without any backing journaled storage. Just call ```keeper.save(commit)``` to
-publish new commits, and don't use the autoPublisher. Everything else will work normally, including gets and mirrors.
+You can use CommitKeeper by itself, too, without any backing journaled storage. You won't be able to access old
+versions of any commits. Just call ```keeper.save(commit)``` to publish new commits, and don't use the autoPublisher.
+The other CommitKeeper features will work normally, including gets and mirrors.
 
 ### HTTP server
 
