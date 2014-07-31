@@ -158,8 +158,8 @@ publish new commits, and don't use the autoPublisher. Everything else will work 
 
 ### HTTP server
 
-You can use the RainerServlet to gain a nice HTTP API to your CommitStorage. The API can be used like this with any
-HTTP client:
+You can use the RainerServlet to gain a nice HTTP API to your CommitStorage. It does not use, or require, a
+CommitKeeper. The API can be used like this with any HTTP client:
 
 ```
 $ curl \
