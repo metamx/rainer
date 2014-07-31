@@ -11,6 +11,9 @@ powerful configuration management system. In addition to key/value access, it ca
 - Optional ZooKeeper-backed views and notifications, for immediate cluster-wide updates.
 - Optional HTTP API along with clients for the JVM, Python, and the command line.
 
+Rainer is written in Scala, as are the examples on this page, but it should also be usable from other JVM
+languages (like Java).
+
 ## Commits
 
 Rainer is based around versioned key/value pairs called "commits". Commits have the attributes:
