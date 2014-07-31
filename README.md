@@ -1,9 +1,9 @@
 # <img width="175" alt="Rainer" src="https://cloud.githubusercontent.com/assets/1214075/3219469/f5fdd28c-eff5-11e3-9914-2e86429dfe79.jpg" />
 
-Rainer helps you deal with namespaces of versioned key/value pairs called "commits". It includes a variety of APIs
-that can collectively provide a full audit trail, concurrency-safe updates, local caching, immediate cluster
-notifications, and easy client integration. The Rainer APIs can be used independently, or they can be used together as
-part of a powerful configuration management system.
+Rainer is a configuration management library that is based around versioned key/value pairs called "commits". It
+includes a variety of APIs that can collectively provide a full audit trail, concurrency-safe updates, local caching,
+immediate notifications, and easy client integration. The Rainer APIs can be used independently, or they can be used
+together as part of a powerful configuration management system.
 
 ## Commits
 
@@ -11,29 +11,76 @@ Commits have the attributes:
 
 - Key, which is a String.
 - Payload, which can be an arbitrary type. Think of this like a short document.
-- Version, which must increase by one with each commit.
+- Version, which must increase by one with each successive commit.
 - Author, the entity that created the commit.
 - Comment, some free-form string describing the commit.
 - Mtime, the timestamp when the commit was created.
 
 Each key's commits are separate from every other key's commits, and are versioned independently. In particular,
-there is no concept of a global namespace version.
+there is no concept of a global database version.
 
-Your value type must be deserializable, so you need to provide a KeyValueDeserialization for it. You do not need to
-provide a serializer, because your values will never be serialized by Rainer. Commits are always built from raw bytes
-and those bytes are stored verbatim. If the documents will be edited by humans, this makes it easy to use formats
-with comments, any whitespace you like, and so on.
+Your payload type must be deserializable, so you need to provide a KeyValueDeserialization for it. You can optionally
+provide a KeyValueSerialization as well.
 
-## Long-term journaled storage
+If you are not using a serializer, then when you create a new Commit, instead of providing the payload as an object,
+you just provide some bytes that are deserializable using your KeyValueDeserialization. This mode is useful if you want
+to allow humans to edit the serialized documents directly, since it will preserve comments, whitespace, and so on.
 
-The CommitStorage trait represents a key/value store that retains every version of every commit. Its
-default implementation is DbCommitStorage, which is backed by an RDBMS.
+## Usage
+
+Rainer offers three server-side components that can work together or separately:
+
+- CommitStorage (persistent journaled storage)
+- CommitKeeper (ZooKeeper-backed views)
+- RainerServlet (HTTP API for remote inspection and modification)
+
+If you want to use all three together, the simplest way is using the "Rainers" builder, which creates all three and
+links them together:
+
+```scala
+implicit val serialization = KeyValueSerialization.usingJackson[ValueType](objectMapper)
+implicit val deserialization = KeyValueDeserialization.usingJackson[ValueType](objectMapper)
+
+val db = new MySQLDB(dbConfig) with DbCommitStorageMySQLMixin
+val rainers = Rainers.create[ValueType](
+  curator,
+  "/path/in/zk",
+  new DbCommitStorage[ValueType](db, "table_name")
+)
+
+db.start()
+rainers.start()
+
+// Do what you will with these:
+val myStorage: CommitStorage[ValueType] = rainers.storage
+val myKeeper: CommitKeeper[ValueType] = rainers.keeper
+val myServlet: RainerServlet[ValueType] = rainers.servlet
+
+// For example:
+myStorage.save(Commit.fromValue(
+  key = "foo",
+  version = 1,
+  payload = new ValueType,
+  author = "me",
+  comment = "Creating foo",
+  mtime = DateTime.now
+))
+```
+
+## Components
+
+### CommitStorage: Persistent journaled storage
+
+The CommitStorage trait represents a key/value store that retains every version of every commit. The main builtin
+implementation is DbCommitStorage, which is backed by an RDBMS.
 
 ```scala
 implicit val deserialization = KeyValueDeserialization.usingJackson[ValueType](objectMapper)
 
 val db = new MySQLDB(dbConfig) with DbCommitStorageMySQLMixin
 val storage = new DbCommitStorage[ValueType](db, "table_name")
+
+db.start()
 storage.start()
 
 // Revert "foo" to previous version
@@ -42,10 +89,11 @@ val previousFoo = foo flatMap (x => storage.get(x.key, x.version - 1))
 previousFoo foreach (x => storage.save(Commit.fromBytes(x.key, x.version + 2, x.payload, "me", "Reverting foo", DateTime.now))
 ```
 
-## ZooKeeper storage
+## CommitKeeper: ZooKeeper views
 
 The CommitKeeper class represents the most recent versions of each commit stored in ZooKeeper. It supports
-on-demand access, live-updating views, and instant notifications.
+on-demand access, live-updating views, and instant notifications. It does not keep a full history for each key; only
+CommitStorages do that.
 
 ```scala
 implicit val deserialization = KeyValueDeserialization.usingJackson[ValueType](objectMapper)
@@ -63,14 +111,16 @@ val mirror: Var[Map[String, Commit[ValueType]]] = keeper.mirror()
 val ref = new AtomicReference[Map[String, Commit[ValueType]]]
 val c = mirror.changes.register(Witness(ref))
 
-// When no longer interested in updates:
+// When you're no longer interested in updates, close the mirror:
 Await.result(c.close())
 ```
 
 ### Using CommitKeeper with CommitStorage
 
 Combining a CommitStorage with a CommitKeeper is a common pattern used for managing configuration of a cluster of
-machines. This setup can provide full-history journaled updates in an RDBMS, coupled with low latency notifications
+machines. The "Rainers" builder does this for you, but you can also do it manually.
+
+Combined setups can provide full-history journaled updates in an RDBMS, coupled with low latency notifications
 through ZooKeeper. The idea is to do all of your saves through a keeperPublishing CommitStorage (which will update
 ZooKeeper any time you save something) and to do your reads through a mirror provided by a CommitKeeper. To prevent
 inopportune crashes or out of band ZooKeeper modifications from causing ZooKeeper to become out of sync, you can also
@@ -95,15 +145,21 @@ storage.save(someCommit)
 Await.result(autoPublisher.close())
 ```
 
+### Using CommitStorage without CommitKeeper
+
+You can use a CommitStorage by itself. The only thing you lose are the ZooKeeper views, which means you can't set up
+mirrors. In this case you'll either need to access the underlying storage on-demand, or set up a cache yourself that
+refreshes periodically.
+
 ### Using CommitKeeper without CommitStorage
 
 You can use CommitKeeper by itself, too, without any backing journaled storage. Just call ```keeper.save(commit)``` to
 publish new commits, and don't use the autoPublisher. Everything else will work normally, including gets and mirrors.
 
-## HTTP server
+### HTTP server
 
-You can add a RainerServlet to your Jetty-based server to gain a nice HTTP API to your CommitStorage. The API can
-be used like this with any HTTP client:
+You can use the RainerServlet to gain a nice HTTP API to your CommitStorage. The API can be used like this with any
+HTTP client:
 
 ```
 $ curl \
@@ -126,9 +182,14 @@ $ curl -s http://localhost:8080/diary/foo/1/meta
 {"author":"gian","key":"foo","version":1,"mtime":"2014-02-11T14:01:28.839-08:00","comment":"rofl"}
 ```
 
-## JVM HTTP client
+## Clients
 
-From another JVM, you can also use the HttpCommitStorage:
+If you have a RainerServlet running, there are a few pre-built clients that can be used to inspect and modify
+configurations remotely.
+
+### JVM HTTP client
+
+You can use HttpCommitStorage to access a RainerServlet running on another machine:
 
 ```scala
 val uri = new URI("http://localhost:8080/diary")
@@ -144,10 +205,9 @@ val storage = new HttpCommitStorage[ValueType](client, uri)
 val commit = storage.get("hey")
 ```
 
-## Python HTTP client
+### Python HTTP client
 
-From Python, "pyrainer" is a convenient wrapper around the HTTP API. You can install it with ```pip install pyrainer```
-and use it like this:
+From Python, you can use "pyrainer". You can install it with ```pip install pyrainer``` and use it like this:
 
 ```python
 import pyrainer.http
@@ -162,12 +222,13 @@ for key in sorted(commits.keys()):
 hey = client.get_commit("hey")
 print "Commit version %s = %s" % (hey.meta["version"], hey.value)
 
-client.post_commit({"key": "hey", "version": 2, "author": "gian", "comment": "rofl"}, "new value")
+client.post_commit({"key": "hey", "version": 2, "author": "sue", "comment": "rofl"}, "new value")
 ```
 
-## Command-line client
+### Command-line client
 
-If you have pyrainer installed (```pip install pyrainer```), you can use the command line tool interactively or in shell scripts.
+If you have pyrainer installed (```pip install pyrainer```), you can use the command line tool interactively or in
+shell scripts.
 
 ```
 $ python -m pyrainer.rainer --url http://localhost:8080/diary list
@@ -179,4 +240,12 @@ $ python -m pyrainer.rainer --url http://localhost:8080/diary show hey
 
 $ python -m pyrainer.rainer --url http://localhost:8080/diary edit hey
 [...a wild $EDITOR appears!]
+```
+
+You can also create a wrapper for your service that makes invocation simpler. An executable script like this should
+do it:
+
+```bash
+#!/bin/sh -e
+python -m pyrainer.rainer --url "http://example.com/foo" "$@"
 ```
