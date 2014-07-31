@@ -6,7 +6,7 @@ In addition to key/value access, it can also provide:
 
 - Full audit trail of historical commits for each key, including who, why, and when they were committed.
 - Ability to detect concurrent modifications and prevent users from clobbering each other.
-- Extensible to handle a variety of storage backends and commit payload types.
+- Extensibility to handle a variety of storage backends and commit payload types.
 - Optional ZooKeeper-backed views and notifications, for immediate cluster-wide updates.
 - Optional HTTP API along with clients for the JVM, Python, and the command line.
 
