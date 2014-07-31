@@ -128,9 +128,10 @@ The "Rainers" builder sets all of this up for you, but you can also do it manual
 
 ```scala
 // During setup, link your underlying storage and keeper together.
+// Afterwards, use "storage", not "underlyingStorage" for your own operations.
 val keeper = new CommitKeeper[ValueType](curator, "/path/in/zk")
 val storage = CommitStorage.keeperPublishing(underlyingStorage, keeper)
-val autoPublisher = keeper.autoPublisher(storage, period, periodFuzz)
+val autoPublisher = keeper.autoPublisher(underlyingStorage, period, periodFuzz)
 autoPublisher.start()
 
 // When your application exits, shut down your autoPublisher.
