@@ -31,7 +31,7 @@ to allow humans to edit the serialized documents directly, since it will preserv
 Rainer offers three server-side components that can work together or separately:
 
 - CommitStorage (persistent journaled storage)
-- CommitKeeper (ZooKeeper-backed views)
+- CommitKeeper (ZooKeeper-backed views and notifications)
 - RainerServlet (HTTP API for remote inspection and modification)
 
 If you want to use all three together, the simplest way is using the "Rainers" builder, which creates all three and
