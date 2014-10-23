@@ -265,5 +265,5 @@ do it:
 
 ```bash
 #!/bin/sh -e
-python -m pyrainer.rainer --url "http://example.com/foo" "$@"
+exec python -m pyrainer.rainer --url "http://example.com/foo" "$@"
 ```
