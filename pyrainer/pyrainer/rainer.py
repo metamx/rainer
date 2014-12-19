@@ -39,6 +39,8 @@ def decorate_argparser(parser, default_url):
   subparsers["list"] = subparser.add_parser('list')
   subparsers["list"].add_argument('-A', '--all', action='store_true')
 
+  subparsers["uncommit"].add_argument('-y', '--yes', action='store_true')
+
   subparsers["commit-value"].add_argument('-m', '--message', type=str, required=True, help='commit message')
 
 def make_client(args):
@@ -73,7 +75,7 @@ def run(default_url=None):
     make_cli(args).action_commit_value(args.key[0], args.version, args.message)
 
   elif args.mode == "uncommit":
-    make_cli(args).action_uncommit(args.key[0], args.version)
+    make_cli(args).action_uncommit(args.key[0], args.version, args.yes)
 
 # actual script (logic + signal handling and exits)
 def main(default_url=None):

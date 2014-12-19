@@ -95,13 +95,16 @@ class RainerCommandLine:
       sys.stdout = old_stdout
       termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
 
-  def action_uncommit(self, key, version=None):
+  def action_uncommit(self, key, version=None, yes=False):
     """CLI uncommit action."""
     commit = self.client.get_commit(key, version)
     next_commit = self.next_commit(commit)
     next_commit.meta["empty"] = True
     next_commit.value = ""
-    self.interactive_confirm_and_post(key, commit, self.prepare_commit(next_commit))
+    if yes:
+      self.post_prepared_commit(key, self.prepare_commit(next_commit))
+    else:
+      self.interactive_confirm_and_post(key, commit, self.prepare_commit(next_commit))
 
   def action_edit(self, key, version=None):
     """CLI edit action."""
