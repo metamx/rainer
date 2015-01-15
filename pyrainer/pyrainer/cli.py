@@ -71,8 +71,12 @@ class RainerCommandLine:
         print "Author: {:s}".format(q.meta["author"])
         print "Date:   {:s}".format(q.meta["mtime"])
         print
-        print "  {:s}".format(q.meta.get("message", "(no message)"))
-        print
+
+        if q.meta.get("comment", "") != "":
+          for comment_line in q.meta["comment"].split("\n"):
+            print "  {:s}".format(comment_line)
+          print
+
         self.__printdiff(
           p.value if p.value is not None else "",
           q.value if q.value is not None else "",
