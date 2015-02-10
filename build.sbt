@@ -53,7 +53,7 @@ libraryDependencies ++= Seq(
   "javax.servlet" % "javax.servlet-api" % "3.0.1",
   "org.eclipse.jetty" % "jetty-servlet" % "8.1.10.v20130312",
   "com.google.guava" % "guava" % "15.0",
-  "org.scalatra" % "scalatra" % "2.2.1" cross ScalatraCross
+  "org.scalatra" % "scalatra" % "2.2.1" cross ScalatraCross exclude("com.typesafe.akka", "akka-actor")
 )
 
 libraryDependencies ++= Seq(
@@ -70,7 +70,7 @@ libraryDependencies <+= scalaVersion {
 libraryDependencies ++= Seq(
   "org.apache.derby" % "derby" % "10.10.1.1" % "test",
   "org.apache.curator" % "curator-test" % curatorVersion % "test",
-  "org.scalatra" % "scalatra-test" % "2.2.1" % "test" cross ScalatraCross
+  "org.scalatra" % "scalatra-test" % "2.2.1" % "test" cross ScalatraCross exclude("com.typesafe.akka", "akka-actor")
 )
 
 libraryDependencies ++= Seq(
