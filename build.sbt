@@ -10,19 +10,36 @@ lazy val root = project.in(file("."))
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
-resolvers ++= Seq(
-  "Metamarkets Releases" at "https://metamx.artifactoryonline.com/metamx/pub-libs-releases-local/"
-)
+licenses := Seq("Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
+
+homepage := Some(url("https://github.com/metamx/rainer"))
 
 publishMavenStyle := true
 
-publishTo := Some("pub-libs" at "https://metamx.artifactoryonline.com/metamx/pub-libs-releases-local")
+publishTo := Some("releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+
+pomIncludeRepository := { _ => false }
+
+pomExtra := (
+  <scm>
+    <url>https://github.com/metamx/rainer.git</url>
+    <connection>scm:git:git@github.com:metamx/rainer.git</connection>
+  </scm>
+  <developers>
+    <developer>
+      <name>Gian Merlino</name>
+      <organization>Metamarkets Group Inc.</organization>
+      <organizationUrl>https://www.metamarkets.com</organizationUrl>
+    </developer>
+  </developers>)
 
 parallelExecution in Test := false
 
 testOptions += Tests.Argument(TestFrameworks.JUnit, "-Duser.timezone=UTC")
 
 releaseSettings
+
+ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
 val curatorVersion = "2.3.0"
 
@@ -32,7 +49,7 @@ def ScalatraCross = CrossVersion.binaryMapped {
 }
 
 libraryDependencies ++= Seq(
-  "com.metamx" %% "scala-util" % "1.8.17",
+  "com.metamx" %% "scala-util" % "1.9.0",
   "javax.servlet" % "javax.servlet-api" % "3.0.1",
   "org.eclipse.jetty" % "jetty-servlet" % "8.1.10.v20130312",
   "com.google.guava" % "guava" % "15.0",
