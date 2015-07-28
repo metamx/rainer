@@ -2,9 +2,9 @@ organization := "com.metamx"
 
 name := "rainer"
 
-scalaVersion := "2.9.1"
+scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.9.1", "2.10.4")
+crossScalaVersions := Seq("2.10.5", "2.11.7")
 
 lazy val root = project.in(file("."))
 
@@ -41,19 +41,13 @@ releaseSettings
 
 ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
-val curatorVersion = "2.3.0"
-
-def ScalatraCross = CrossVersion.binaryMapped {
-  case "2.9.1" => "2.9.2"
-  case x => x
-}
+val curatorVersion = "2.6.0"
 
 libraryDependencies ++= Seq(
-  "com.metamx" %% "scala-util" % "1.9.0",
+  "com.metamx" %% "scala-util" % "1.11.0",
   "javax.servlet" % "javax.servlet-api" % "3.0.1",
   "org.eclipse.jetty" % "jetty-servlet" % "8.1.10.v20130312",
-  "com.google.guava" % "guava" % "15.0",
-  "org.scalatra" % "scalatra" % "2.2.1" cross ScalatraCross exclude("com.typesafe.akka", "akka-actor")
+  "com.google.guava" % "guava" % "15.0"
 )
 
 libraryDependencies ++= Seq(
@@ -62,17 +56,31 @@ libraryDependencies ++= Seq(
   "org.apache.curator" % "curator-x-discovery" % curatorVersion exclude("org.jboss.netty", "netty")
 )
 
-libraryDependencies <+= scalaVersion {
-  case "2.9.1" => "com.simple" % "simplespec_2.9.2" % "0.7.0" % "test"
-  case "2.10.4" => "com.simple" % "simplespec_2.10.2" % "0.8.4" % "test"
+libraryDependencies <++= scalaVersion {
+  case x if x.startsWith("2.10.") => Seq(
+    "org.scalatra" %% "scalatra" % "2.2.1" exclude("com.typesafe.akka", "akka-actor"),
+    "org.scalatra" %% "scalatra-test" % "2.2.1" % "test" exclude("com.typesafe.akka", "akka-actor")
+  )
+  case x if x.startsWith("2.11.") => Seq(
+    "org.scalatra" %% "scalatra" % "2.3.1" exclude("com.typesafe.akka", "akka-actor"),
+    "org.scalatra" %% "scalatra-test" % "2.3.1" % "test" exclude("com.typesafe.akka", "akka-actor")
+  )
 }
 
+libraryDependencies <+= scalaVersion {
+  case x if x.startsWith("2.10.") => "com.simple" % "simplespec_2.10.2" % "0.8.4" % "test"
+  case x if x.startsWith("2.11.") => "com.simple" % "simplespec_2.11" % "0.8.4" % "test"
+}
+
+// Test stuff
 libraryDependencies ++= Seq(
+  "junit" % "junit" % "4.11" % "test",
+  "com.novocode" % "junit-interface" % "0.10" % "test",
   "org.apache.derby" % "derby" % "10.10.1.1" % "test",
   "org.apache.curator" % "curator-test" % curatorVersion % "test",
-  "org.scalatra" % "scalatra-test" % "2.2.1" % "test" cross ScalatraCross exclude("com.typesafe.akka", "akka-actor")
-)
-
-libraryDependencies ++= Seq(
-  "com.novocode" % "junit-interface" % "0.10" % "test"
+  "ch.qos.logback" % "logback-core" % "1.1.2" % "test",
+  "ch.qos.logback" % "logback-classic" % "1.1.2" % "test",
+  "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.1" % "test",
+  "org.slf4j" % "log4j-over-slf4j" % "1.7.6" % "test",
+  "org.slf4j" % "jul-to-slf4j" % "1.7.6" % "test"
 )
