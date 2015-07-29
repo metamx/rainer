@@ -14,7 +14,7 @@ class HttpCommitStorageTest extends CommitStorageTests {
     val client = ClientBuilder()
       .name(uri.toString)
       .codec(Http())
-      .group(Group.fromVarAddr(InetResolver.bind(uri.authority)))
+      .group(Group.fromVarAddr(InetResolver().bind(uri.authority)))
       .hostConnectionLimit(2)
       .daemon(true)
       .build()

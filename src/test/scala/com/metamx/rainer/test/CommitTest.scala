@@ -109,7 +109,7 @@ class CommitTest extends Matchers
     val commit2 = Commit.deserializeOrThrow[TestPayload](serialized)
     evaluating {
       commit2.value.flatMap(_.left.toOption).foreach(throw _)
-    } must throwA[JsonParseException]("""Unexpected character \('c' \(code 99\)\).*""".r)
+    } must throwA[JsonParseException]("""Unrecognized token 'cant'.*""".r)
     commit2.valueOption must be(None)
   }
 
