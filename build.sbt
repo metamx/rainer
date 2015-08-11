@@ -46,26 +46,17 @@ val curatorVersion = "2.6.0"
 libraryDependencies ++= Seq(
   "com.metamx" %% "scala-util" % "1.11.0",
   "javax.servlet" % "javax.servlet-api" % "3.0.1",
-  "org.eclipse.jetty" % "jetty-servlet" % "8.1.10.v20130312",
+  "org.eclipse.jetty" % "jetty-servlet" % "9.2.12.v20150709",
   "com.google.guava" % "guava" % "15.0"
 )
 
 libraryDependencies ++= Seq(
   "org.apache.curator" % "curator-framework" % curatorVersion exclude("org.jboss.netty", "netty"),
   "org.apache.curator" % "curator-recipes" % curatorVersion exclude("org.jboss.netty", "netty"),
-  "org.apache.curator" % "curator-x-discovery" % curatorVersion exclude("org.jboss.netty", "netty")
+  "org.apache.curator" % "curator-x-discovery" % curatorVersion exclude("org.jboss.netty", "netty"),
+  "org.scalatra" %% "scalatra" % "2.3.1" exclude("com.typesafe.akka", "akka-actor"),
+  "org.scalatra" %% "scalatra-test" % "2.3.1" % "test" exclude("com.typesafe.akka", "akka-actor")
 )
-
-libraryDependencies <++= scalaVersion {
-  case x if x.startsWith("2.10.") => Seq(
-    "org.scalatra" %% "scalatra" % "2.2.1" exclude("com.typesafe.akka", "akka-actor"),
-    "org.scalatra" %% "scalatra-test" % "2.2.1" % "test" exclude("com.typesafe.akka", "akka-actor")
-  )
-  case x if x.startsWith("2.11.") => Seq(
-    "org.scalatra" %% "scalatra" % "2.3.1" exclude("com.typesafe.akka", "akka-actor"),
-    "org.scalatra" %% "scalatra-test" % "2.3.1" % "test" exclude("com.typesafe.akka", "akka-actor")
-  )
-}
 
 libraryDependencies <+= scalaVersion {
   case x if x.startsWith("2.10.") => "com.simple" % "simplespec_2.10.2" % "0.8.4" % "test"

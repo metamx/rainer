@@ -26,8 +26,7 @@ import com.metamx.common.scala.db.MySQLDB
 import com.metamx.common.scala.net.curator.{Curator, Disco}
 import com.metamx.rainer.http.config.{ServiceConfig, RainerDBConfig, RainerCuratorConfig}
 import com.metamx.rainer.{KeyValueDeserialization, CommitStorage, CommitKeeper, DbCommitStorage, DbCommitStorageMySQLMixin}
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.server.nio.SelectChannelConnector
+import org.eclipse.jetty.server.{ServerConnector, Server}
 import org.eclipse.jetty.servlet.{ServletHolder, ServletContextHandler}
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 
@@ -49,16 +48,19 @@ object Main
       override def valueDeserialization = implicitly[KeyValueDeserialization[DictValue]]
       override def commitStorage = CommitStorage.keeperPublishing(storage, keeper)
     }
-    val server = new Server
+    val server = new Server(
+      new QueuedThreadPool() withEffect { pool =>
+        pool.setMinThreads(serviceConfig.threads)
+        pool.setMaxThreads(serviceConfig.threads)
+      }
+    )
     server.setConnectors(
       Array(
-        new SelectChannelConnector withEffect {
-          connector =>
-            connector.setPort(serviceConfig.servicePort)
+        new ServerConnector(server) withEffect {
+          _.setPort(serviceConfig.servicePort)
         }
       )
     )
-    server.setThreadPool(new QueuedThreadPool(serviceConfig.threads))
     server.setHandler(
       new ServletContextHandler(ServletContextHandler.NO_SESSIONS) withEffect {
         context =>
