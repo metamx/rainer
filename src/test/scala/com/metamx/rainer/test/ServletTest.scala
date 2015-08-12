@@ -456,6 +456,48 @@ class ServletTest extends Matchers with RainerTests
   }
 
   @Test
+  def testPostMissingComment() {
+    execute {
+      tester =>
+        tester.post("/things/what/1", """{"s":"hey"}""".getBytes, Map(
+          "X-Rainer-Author" -> "dude"
+        )) {
+          Jackson.parse[Dict](tester.body) must be(
+            Map(
+              "key" -> "what",
+              "version" -> 1,
+              "author" -> "dude",
+              "comment" -> "",
+              "mtime" -> "1970-01-01T00:00:00.002Z",
+              "empty" -> false
+            )
+          )
+          tester.status must be(200)
+        }
+    }
+
+    execute {
+      tester =>
+        tester.post("/things/what/1", """{"s":"hey"}""".getBytes, Map(
+          "X-Rainer-Author" -> "dude",
+          "X-Rainer-Comment" -> ""
+        )) {
+          Jackson.parse[Dict](tester.body) must be(
+            Map(
+              "key" -> "what",
+              "version" -> 1,
+              "author" -> "dude",
+              "comment" -> "",
+              "mtime" -> "1970-01-01T00:00:00.002Z",
+              "empty" -> false
+            )
+          )
+          tester.status must be(200)
+        }
+    }
+  }
+
+  @Test
   def testGetMirror() {
     executeMirror {
       tester =>

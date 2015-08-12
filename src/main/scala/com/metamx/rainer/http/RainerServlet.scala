@@ -65,10 +65,12 @@ trait RainerServlet[ValueType] extends ScalatraServlet with RainerServletBase wi
       if (request.header("X-Rainer-Version").exists(_ != version.toString)) {
         throw new ClientException("X-Rainer-Version must match URL version, or be omitted")
       }
-      (request.header("X-Rainer-Author"), request.header("X-Rainer-Comment")) match {
-        case (None, _) => BadRequest("Missing header: X-Rainer-Author")
-        case (_, None) => BadRequest("Missing header: X-Rainer-Comment")
-        case (Some(author), Some(comment)) =>
+      request.header("X-Rainer-Author") match {
+        case None => BadRequest("Missing header: X-Rainer-Author")
+
+        case Some(author) =>
+          val comment = request.header("X-Rainer-Comment").getOrElse("")
+
           val empty = RainerServlet.yesNo(request.header("X-Rainer-Empty").getOrElse("false")) getOrElse {
             throw new ClientException("Malformed header: X-Rainer-Empty")
           }
