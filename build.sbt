@@ -41,10 +41,10 @@ releaseSettings
 
 ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
-val curatorVersion = "2.6.0"
+val curatorVersion = "2.9.1"
 
 libraryDependencies ++= Seq(
-  "com.metamx" %% "scala-util" % "1.11.0",
+  "com.metamx" %% "scala-util" % "1.11.9",
   "javax.servlet" % "javax.servlet-api" % "3.0.1",
   "org.eclipse.jetty" % "jetty-servlet" % "9.2.12.v20150709",
   "com.google.guava" % "guava" % "15.0"
