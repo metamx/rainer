@@ -83,6 +83,32 @@ object CommitStorage extends Logging
     }
   }
 
+  def withPreSaveHook[ValueType](delegate: CommitStorage[ValueType])(hook: Commit[ValueType] => Unit) = {
+    new CommitStorage[ValueType]
+    {
+      override def start() {
+        delegate.start()
+      }
+
+      override def stop() {
+        delegate.stop()
+      }
+
+      override def save(commit: Commit[ValueType]) {
+        hook(commit)
+        delegate.save(commit)
+      }
+
+      override def get(key: Commit.Key, version: Int) = delegate.get(key, version)
+
+      override def get(key: Commit.Key) = delegate.get(key)
+
+      override def heads = delegate.heads
+
+      override def headsNonEmpty = delegate.headsNonEmpty
+    }
+  }
+
   def withPostSaveHook[ValueType](delegate: CommitStorage[ValueType])(hook: Commit[ValueType] => Unit) = {
     new CommitStorage[ValueType]
     {
