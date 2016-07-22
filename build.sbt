@@ -41,13 +41,13 @@ releaseSettings
 
 ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
-val curatorVersion = "2.9.1"
+val curatorVersion = "2.10.0"
 
 libraryDependencies ++= Seq(
-  "com.metamx" %% "scala-util" % "1.11.9",
+  "com.metamx" %% "scala-util" % "1.12.5",
   "javax.servlet" % "javax.servlet-api" % "3.0.1",
   "org.eclipse.jetty" % "jetty-servlet" % "9.2.12.v20150709",
-  "com.google.guava" % "guava" % "15.0"
+  "com.google.guava" % "guava" % "16.0.1"
 )
 
 libraryDependencies ++= Seq(
@@ -55,18 +55,13 @@ libraryDependencies ++= Seq(
   "org.apache.curator" % "curator-recipes" % curatorVersion exclude("org.jboss.netty", "netty"),
   "org.apache.curator" % "curator-x-discovery" % curatorVersion exclude("org.jboss.netty", "netty"),
   "org.scalatra" %% "scalatra" % "2.3.1" exclude("com.typesafe.akka", "akka-actor"),
-  "org.scalatra" %% "scalatra-test" % "2.3.1" % "test" exclude("com.typesafe.akka", "akka-actor")
+  "org.scalatra" %% "scalatra-test" % "2.3.1" % "test" exclude("com.typesafe.akka", "akka-actor") exclude("org.mockito", "mockito-all") force()
 )
-
-libraryDependencies <+= scalaVersion {
-  case x if x.startsWith("2.10.") => "com.simple" % "simplespec_2.10.2" % "0.8.4" % "test"
-  case x if x.startsWith("2.11.") => "com.simple" % "simplespec_2.11" % "0.8.4" % "test"
-}
 
 // Test stuff
 libraryDependencies ++= Seq(
-  "junit" % "junit" % "4.11" % "test",
-  "com.novocode" % "junit-interface" % "0.10" % "test",
+  "junit" % "junit" % "4.11" % "test" force(),
+  "org.mockito" % "mockito-core" % "1.9.5" % "test" force(),
   "org.apache.derby" % "derby" % "10.10.1.1" % "test",
   "org.apache.curator" % "curator-test" % curatorVersion % "test",
   "ch.qos.logback" % "logback-core" % "1.1.2" % "test",
@@ -74,4 +69,17 @@ libraryDependencies ++= Seq(
   "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.1" % "test",
   "org.slf4j" % "log4j-over-slf4j" % "1.7.6" % "test",
   "org.slf4j" % "jul-to-slf4j" % "1.7.6" % "test"
+)
+
+libraryDependencies <++= scalaVersion {
+  case x if x.startsWith("2.10.") => Seq(
+    "com.simple" % "simplespec_2.10.2" % "0.8.4" % "test" exclude("org.mockito", "mockito-all") force()
+  )
+  case _ => Seq(
+    "com.simple" %% "simplespec" % "0.8.4" % "test" exclude("org.mockito", "mockito-all") force()
+  )
+}
+
+libraryDependencies ++= Seq(
+  "com.novocode" % "junit-interface" % "0.11-RC1" % "test" exclude("junit", "junit") force()
 )

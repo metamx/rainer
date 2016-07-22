@@ -17,18 +17,16 @@
 
 package com.metamx.rainer
 
-import com.google.common.base.Charsets
 import com.google.common.io.BaseEncoding
 import com.metamx.common.scala.Jackson
 import com.metamx.common.scala.Predef._
 import com.metamx.common.scala.net.uri._
-import com.metamx.common.scala.untyped.{str, dict, int, Dict}
+import com.metamx.common.scala.untyped.{Dict, dict, int, str}
 import com.metamx.rainer.http.RainerServlet
 import com.twitter.finagle.Service
-import com.twitter.util.{Future, Await}
-import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.handler.codec.http.{HttpMethod, HttpVersion, DefaultHttpRequest, HttpResponse, HttpRequest}
-import scala.collection.JavaConverters._
+import com.twitter.finagle.http.{Method, Request, Response}
+import com.twitter.io.Buf
+import com.twitter.util.{Await, Future}
 
 /**
  * CommitStorage implementation backed by a remote rainer servlet.
@@ -38,7 +36,7 @@ import scala.collection.JavaConverters._
  *                `client` is used for that) but will be used to set the "Host" header and determine service paths.
  */
 class HttpCommitStorage[ValueType: KeyValueDeserialization](
-  client: Service[HttpRequest, HttpResponse],
+  client: Service[Request, Response],
   baseUri: URI
 ) extends CommitStorage[ValueType]
 {
@@ -47,13 +45,13 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   override def stop() {}
 
   override def heads = {
-    val theRequest = request(HttpMethod.GET, "", Some("all=yes&payload_base64=yes"))
+    val theRequest = request(Method.Get, "", Some("all=yes&payload_base64=yes"))
     val theResponse = client(theRequest).map(failOnErrors).map(asHeads)
     Await.result(theResponse)
   }
 
   override def headsNonEmpty = {
-    val theRequest = request(HttpMethod.GET, "", Some("payload_base64=yes"))
+    val theRequest = request(Method.Get, "", Some("payload_base64=yes"))
     val theResponse = client(theRequest).map(failOnErrors).map(asHeads)
     Await.result(theResponse)
   }
@@ -65,15 +63,15 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   override def save(commit: Commit[ValueType]) {
     val response =
       client(
-        request(HttpMethod.POST, "/%s/%d" format(commit.key, commit.version), None) withEffect {
+        request(Method.Post, "/%s/%d" format(commit.key, commit.version), None) withEffect {
           req =>
             val bytes = commit.payload.getOrElse(Array.empty[Byte])
             for ((k, v) <- RainerServlet.headersForCommitMetadata(commit.meta)) {
-              req.headers().set(k, v)
+              req.headerMap.set(k, v)
             }
-            req.headers().set("Content-Length", bytes.size)
-            req.headers().set("Content-Type", "application/octet-stream")
-            req.setContent(ChannelBuffers.wrappedBuffer(bytes))
+            req.headerMap.set("Content-Length", bytes.size.toString)
+            req.headerMap.set("Content-Type", "application/octet-stream")
+            req.content =  Buf.ByteArray.Shared(bytes)
         }
       )
     Await.result(response.map(throwOrderingExceptions).map(failOnErrors))
@@ -83,16 +81,16 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
     baseUri.withPath(_ + suffix).withQuery(queryString.orNull)
   }
 
-  private def request(method: HttpMethod, pathSuffix: String, queryString: Option[String]) = {
-    new DefaultHttpRequest(HttpVersion.HTTP_1_1, method, uri(pathSuffix, queryString).toString) withEffect {
+  private def request(method: Method, pathSuffix: String, queryString: Option[String]) = {
+    Request(method, uri(pathSuffix, queryString).toString) withEffect {
       req =>
         val hostAndPort = baseUri.host + (if (baseUri.port > 0) {
           ":%d" format baseUri.port
         } else {
           ""
         })
-        req.headers().set("Host", hostAndPort)
-        req.headers().set("Accept", "*/*")
+        req.headerMap.set("Host", hostAndPort)
+        req.headerMap.set("Accept", "*/*")
     }
   }
 
@@ -101,7 +99,7 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
       case Some(v) => "/%s/%d" format(key, v)
       case None => "/%s" format key
     }
-    val commit = client(request(HttpMethod.GET, path, None))
+    val commit = client(request(Method.Get, path, None))
       .map(swallow404)
       .map(_.map(failOnErrors))
       .map(_.map(asCommit))
@@ -111,8 +109,8 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   /**
    * Convert 404s into Nones, pass through as Somes otherwise.
    */
-  private def swallow404(response: HttpResponse): Option[HttpResponse] = {
-    if (response.getStatus.getCode != 404) {
+  private def swallow404(response: Response): Option[Response] = {
+    if (response.statusCode != 404) {
       Some(response)
     } else {
       None
@@ -122,13 +120,13 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   /**
    * Throw an exception if the response status is non-200, pass through otherwise.
    */
-  private def failOnErrors(response: HttpResponse): HttpResponse = {
-    if (response.getStatus.getCode / 100 == 2) {
+  private def failOnErrors(response: Response): Response = {
+    if (response.statusCode / 100 == 2) {
       response
     } else {
       throw new IllegalArgumentException(
         "HTTP request failed: %d %s: %s" format
-          (response.getStatus.getCode, response.getStatus.getReasonPhrase, response.getContent.toString(Charsets.UTF_8))
+          (response.statusCode, response.status.reason, response.contentString)
       )
     }
   }
@@ -136,11 +134,11 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   /**
    * Detect and throw CommitOrderingExceptions if present; otherwise don't change the response.
    */
-  private def throwOrderingExceptions(response: HttpResponse) = {
+  private def throwOrderingExceptions(response: Response) = {
     // Maybe throw an exception.
-    if (response.getStatus.getCode == 409) {
+    if (response.statusCode == 409) {
       val orderingException: Option[CommitOrderingException] = try {
-        val d = Jackson.parse[Dict](response.getContent.toString(Charsets.UTF_8))
+        val d = Jackson.parse[Dict](response.contentString)
         d.get("conflict").map(dict(_)) map {
           conflictDict =>
             new CommitOrderingException(
@@ -164,23 +162,18 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   /**
    * Extract bytes from the response.
    */
-  private def asBytes(response: HttpResponse): Array[Byte] = {
-    val byteBuffer = response.getContent.toByteBuffer
-    val bytes = Array.ofDim[Byte](byteBuffer.remaining())
-    byteBuffer.get(bytes)
+  private def asBytes(response: Response): Array[Byte] = {
+    val buf = response.content
+    val bytes = Array.ofDim[Byte](buf.length)
+    buf.write(bytes, 0)
     bytes
   }
 
   /**
    * Extract Commit object from the response.
    */
-  private def asCommit(response: HttpResponse): Commit[ValueType] = {
-    val meta = RainerServlet.commitMetadataForHeaders(
-      response.headers().asScala.map {
-        entry =>
-          (entry.getKey, entry.getValue)
-      }.toMap
-    )
+  private def asCommit(response: Response): Commit[ValueType] = {
+    val meta = RainerServlet.commitMetadataForHeaders(response.headerMap.toMap)
     val bytes = asBytes(response)
     Commit(meta, if (meta.empty) None else Some(bytes))
   }
@@ -188,7 +181,7 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   /**
    * Extract Map of Commits from the response.
    */
-  private def asHeads(response: HttpResponse): Map[Commit.Key, Commit[ValueType]] = {
+  private def asHeads(response: Response): Map[Commit.Key, Commit[ValueType]] = {
     val d = parseJson[Dict](response)
     for ((k, data) <- d) yield {
       val meta = CommitMetadata.fromMap(dict(data))
@@ -200,7 +193,7 @@ class HttpCommitStorage[ValueType: KeyValueDeserialization](
   /**
    * Parse response content as JSON.
    */
-  private def parseJson[A: ClassManifest](response: HttpResponse): A = {
+  private def parseJson[A: ClassManifest](response: Response): A = {
     Jackson.parse[A](asBytes(response))
   }
 }
