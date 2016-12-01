@@ -2,11 +2,11 @@
 
 import argparse
 import errno
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import sys
 
-import http
-import cli
+from . import http
+from . import cli
 
 # arg parsing
 def parse_args(default_url):
@@ -31,7 +31,7 @@ def decorate_argparser(parser, default_url):
   subparsers["show"]         = subparser.add_parser('show')
   subparsers["log"]          = subparser.add_parser('log')
 
-  for name, parser in subparsers.iteritems():
+  for name, parser in subparsers.items():
     parser.add_argument('key', metavar='key', nargs=1, help='commit key')
     if name != "commit":
       parser.add_argument('version', metavar='version', type=int, nargs="?", help='commit version')
@@ -83,17 +83,17 @@ def main(default_url=None):
     run(default_url)
     sys.exit(0)
 
-  except urllib2.HTTPError, e:
-    print e
-    print e.read()
+  except urllib.error.HTTPError as e:
+    print(e)
+    print(e.read().decode("utf-8"))
 
-  except urllib2.URLError, e:
-    print 'ERROR:', e.reason
+  except urllib.error.URLError as e:
+    print('ERROR:', e.reason)
 
-  except KeyboardInterrupt, e:
+  except KeyboardInterrupt as e:
     pass # Ignore SIGINT
 
-  except IOError, e:
+  except IOError as e:
     if e.errno not in [errno.EPIPE]: # Ignore SIGPIPE
       raise e
 

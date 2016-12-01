@@ -2,17 +2,17 @@ import argparse
 import difflib
 import errno
 import os
-import http
+from . import http
 import re
 import subprocess
 import sys
 import tempfile
 import termcolor
 import termios
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import yaml
 
-from commit import RainerCommit
+from .commit import RainerCommit
 
 class RainerCommandLine:
 
@@ -25,31 +25,31 @@ class RainerCommandLine:
   def action_show(self, key, version=None):
     commit = self.client.get_commit(key, version)
     if commit.value is not None:
-      print commit.value,
+      print(commit.value, end=' ')
 
   def action_prepare(self, key, version=None):
     commit = self.client.get_commit(key, version)
     next_commit = self.next_commit(commit)
-    print self.prepare_commit(next_commit),
+    print(self.prepare_commit(next_commit), end=' ')
 
   def action_list(self, all=False):
     data = self.client.list(all)
     for key in sorted(data.keys()):
       version = data[key]['version']
-      print "%s\t%s\t%s" % (key, str(version), self.client.commit_uri(key, version))
+      print("%s\t%s\t%s" % (key, str(version), self.client.commit_uri(key, version)))
 
   def action_commit(self, key):
-    print self.post_prepared_commit(key, sys.stdin.read())
+    print(self.post_prepared_commit(key, sys.stdin.read()))
 
   def action_commit_value(self, key, version, message):
     if version:
       the_version = version
     else:
       the_version = 1
-    print self.client.post_commit(
+    print(self.client.post_commit(
       {"key": key, "version": the_version, "author": os.getlogin(), "comment": message},
       sys.stdin.read()
-    )
+    ))
 
   def action_log(self, key, version=None):
     """CLI log action."""
@@ -57,25 +57,28 @@ class RainerCommandLine:
     old = termios.tcgetattr(sys.stdin)
     try:
       # page output
-      pager = subprocess.Popen(['less', '-FRSX'], stdin=subprocess.PIPE, stdout=sys.stdout)
+      pager = subprocess.Popen(['less', '-FRSX'], stdin=subprocess.PIPE, universal_newlines=True)
       sys.stdout = pager.stdin
 
       q = self.client.get_commit(key, version)
-      while int(q.meta["version"]) > 0:
-        if int(q.meta["version"]) == 1:
+      meta_version = int(q.meta["version"])
+      while meta_version > 0:
+        if meta_version == 1:
           p = RainerCommit({"version": 0, "key": q.meta["key"]}, "")
         else:
-          p = self.client.get_commit(key, int(q.meta["version"]) - 1)
+          p = self.client.get_commit(key, meta_version - 1)
 
-        print termcolor.colored("commit {:d}".format(q.meta["version"]), "yellow")
-        print "Author: {:s}".format(q.meta["author"])
-        print "Date:   {:s}".format(q.meta["mtime"])
-        print
+        commit_version = "commit {:d}".format(meta_version)
+        sys.stdout.write(termcolor.colored(commit_version, "yellow"))
+        print()
+        print("Author: {:s}".format(q.meta["author"]))
+        print("Date:   {:s}".format(q.meta["mtime"]))
+        print()
 
         if q.meta.get("comment", "") != "":
           for comment_line in q.meta["comment"].split("\n"):
-            print "  {:s}".format(comment_line)
-          print
+            print("  {:s}".format(comment_line))
+          print()
 
         self.__printdiff(
           p.value if p.value is not None else "",
@@ -84,13 +87,14 @@ class RainerCommandLine:
           "{:s} {:d}".format(q.meta["key"], q.meta["version"]),
         )
 
-        if int(q.meta["version"]) > 0:
-          print
-          print
+        if meta_version > 0:
+          print()
+          print()
 
         sys.stdout.flush()
 
         q = p
+        meta_version = int(q.meta["version"])
 
       pager.stdin.close()
       pager.wait()
@@ -114,7 +118,7 @@ class RainerCommandLine:
     """CLI edit action."""
     try:
       commit = self.client.get_commit(key, version)
-    except urllib2.HTTPError, e:
+    except urllib.error.HTTPError as e:
       if e.code == 404:
         # Commit not found. Make some stuff up.
         commit = RainerCommit({"key": key, "version": 0}, "")
@@ -140,10 +144,10 @@ class RainerCommandLine:
         # all successful - remove tmp file
         os.unlink(tmp.name)
       else:
-        print "Your work is saved in: " + tmp.name
+        print("Your work is saved in: " + tmp.name)
 
     except:
-      print "An error was encountered. Your work is saved in: " + tmp.name
+      print("An error was encountered. Your work is saved in: " + tmp.name)
       raise
 
   def interactive_confirm_and_post(self, key, old_commit, new_prepared):
@@ -165,19 +169,19 @@ class RainerCommandLine:
       )
 
       # ask for confirmation
-      usersaid = raw_input("Commit to %s (yes/no)? " % self.client.commit_uri(key))
+      usersaid = input("Commit to %s (yes/no)? " % self.client.commit_uri(key))
 
       while usersaid != "yes" and usersaid != "no":
-        usersaid = raw_input("Please type 'yes' or 'no': ")
+        usersaid = input("Please type 'yes' or 'no': ")
 
       if usersaid == "yes":
-        print self.post_prepared_commit(key, new_prepared)
+        print(self.post_prepared_commit(key, new_prepared))
         written = True
       else:
-        print "OK, not commiting."
+        print("OK, not commiting.")
 
     else:
-      print "No change, not commiting."
+      print("No change, not commiting.")
 
     return written
 
@@ -195,9 +199,9 @@ class RainerCommandLine:
     header = yaml.dump(commit.meta, default_flow_style=False)
     header += "---\n"
     if commit.value is None:
-      return bytes(header)
+      return bytes(header, 'utf8')
     else:
-      return bytes(header) + bytes(commit.value)
+      return bytes(header, 'utf8') + bytes(commit.value, 'utf8')
 
   def post_prepared_commit(self, key, prepared):
     """Post a prepared commit back to the API."""
@@ -218,10 +222,10 @@ class RainerCommandLine:
 
     for line in difflib.unified_diff(oldlines, newlines, str(oldname), str(newname)):
       if line.startswith("---") or line.startswith("+++"):
-        sys.stdout.write(termcolor.colored(bytes(line), "white", attrs=["bold"]))
+        sys.stdout.write(termcolor.colored(line, "white", attrs=["bold"]))
       elif line.startswith("-"):
-        sys.stdout.write(termcolor.colored(bytes(line), "red"))
+        sys.stdout.write(termcolor.colored(line, "red"))
       elif line.startswith("+"):
-        sys.stdout.write(termcolor.colored(bytes(line), "green"))
+        sys.stdout.write(termcolor.colored(line, "green"))
       else:
-        sys.stdout.write(bytes(line))
+        sys.stdout.write(line)
