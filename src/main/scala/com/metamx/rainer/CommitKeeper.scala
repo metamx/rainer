@@ -17,11 +17,11 @@
 
 package com.metamx.rainer
 
+import com.github.nscala_time.time.Imports._
 import com.metamx.common.scala.Logging
 import com.metamx.common.scala.concurrent.everyFuzzy
 import com.metamx.common.scala.exception._
 import com.twitter.util.{Await, Closable, Future, Time, Var}
-import java.util.concurrent.CountDownLatch
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type._
 import org.apache.curator.framework.recipes.cache.{PathChildrenCache, PathChildrenCacheEvent, PathChildrenCacheListener}
@@ -30,7 +30,6 @@ import org.apache.curator.utils.ZKPaths
 import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NoNodeException
 import org.apache.zookeeper.data.Stat
-import org.scala_tools.time.Imports._
 import scala.collection.JavaConverters._
 
 /**

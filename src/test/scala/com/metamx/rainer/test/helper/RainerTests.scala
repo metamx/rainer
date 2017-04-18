@@ -17,15 +17,15 @@
 
 package com.metamx.rainer.test.helper
 
+import com.github.nscala_time.time.Imports._
 import com.metamx.common.scala.Logging
 import com.metamx.rainer.{Commit, CommitKeeper}
-import com.twitter.util.{Witness, Closable}
+import com.twitter.util.{Closable, Witness}
 import java.util.concurrent.atomic.AtomicReference
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.curator.test.TestingCluster
 import org.joda.time.DateTime
-import org.scala_tools.time.Imports._
 
 trait RainerTests extends Logging
 {

@@ -18,6 +18,7 @@
 package com.metamx.rainer.test
 
 import com.fasterxml.jackson.databind.JsonMappingException
+import com.github.nscala_time.time.Imports._
 import com.metamx.common.scala.Jackson
 import com.metamx.rainer.Commit.Key
 import com.metamx.rainer.test.helper.{RainerTests, TestPayload, TestPayloadStrict}
@@ -26,7 +27,6 @@ import com.simple.simplespec.Matchers
 import com.twitter.util.{Await, Witness}
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import org.junit.Test
-import org.scala_tools.time.Imports._
 
 class CommitKeeperTest extends Matchers with RainerTests
 {

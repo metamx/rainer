@@ -17,11 +17,11 @@
 
 package com.metamx.rainer
 
+import com.github.nscala_time.time.Imports._
 import com.google.common.base.Charsets
 import com.metamx.common.scala.Jackson
 import com.metamx.common.scala.exception._
 import com.metamx.common.scala.untyped._
-import org.scala_tools.time.Imports._
 
 /**
  * Represents a key/value commit. The value is stored as a byte array, although Commits always know how to

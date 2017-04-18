@@ -1,9 +1,9 @@
 package com.metamx.rainer
 
+import com.github.nscala_time.time.Imports._
 import com.metamx.common.lifecycle.{LifecycleStart, LifecycleStop}
 import com.metamx.rainer.http.RainerServlet
 import org.apache.curator.framework.CuratorFramework
-import org.scala_tools.time.Imports._
 
 class Rainers[ValueType: KeyValueDeserialization](
   val storage: CommitStorage[ValueType],

@@ -2,9 +2,9 @@ organization := "com.metamx"
 
 name := "rainer"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
-crossScalaVersions := Seq("2.10.5", "2.11.7")
+crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 lazy val root = project.in(file("."))
 
@@ -44,7 +44,7 @@ ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 val curatorVersion = "2.10.0"
 
 libraryDependencies ++= Seq(
-  "com.metamx" %% "scala-util" % "1.12.5",
+  "com.metamx" %% "scala-util" % "1.13.2",
   "javax.servlet" % "javax.servlet-api" % "3.0.1",
   "org.eclipse.jetty" % "jetty-servlet" % "9.2.12.v20150709",
   "com.google.guava" % "guava" % "16.0.1"
