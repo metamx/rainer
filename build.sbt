@@ -4,7 +4,7 @@ name := "rainer"
 
 scalaVersion := "2.11.8"
 
-crossScalaVersions := Seq("2.10.6", "2.11.8")
+crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 lazy val root = project.in(file("."))
 
@@ -58,8 +58,8 @@ libraryDependencies ++= Seq(
   "org.apache.curator" % "curator-framework" % curatorVersion exclude("org.jboss.netty", "netty"),
   "org.apache.curator" % "curator-recipes" % curatorVersion exclude("org.jboss.netty", "netty"),
   "org.apache.curator" % "curator-x-discovery" % curatorVersion exclude("org.jboss.netty", "netty"),
-  "org.scalatra" %% "scalatra" % "2.3.1" exclude("com.typesafe.akka", "akka-actor"),
-  "org.scalatra" %% "scalatra-test" % "2.3.1" % "test" exclude("com.typesafe.akka", "akka-actor") exclude("org.mockito", "mockito-all") force()
+  "org.scalatra" %% "scalatra" % "2.5.0" exclude("com.typesafe.akka", "akka-actor"),
+  "org.scalatra" %% "scalatra-test" % "2.5.0" % "test" exclude("com.typesafe.akka", "akka-actor") exclude("org.mockito", "mockito-all") force()
 )
 
 // Test stuff
@@ -76,11 +76,11 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies <++= scalaVersion {
-  case x if x.startsWith("2.10.") => Seq(
-    "com.simple" % "simplespec_2.10.2" % "0.8.4" % "test" exclude("org.mockito", "mockito-all") force()
+  case x if x.startsWith("2.11.") => Seq(
+    "com.simple" %% "simplespec" % "0.8.4" % "test" exclude("org.mockito", "mockito-all") force()
   )
   case _ => Seq(
-    "com.simple" %% "simplespec" % "0.8.4" % "test" exclude("org.mockito", "mockito-all") force()
+    "com.simple" %% "simplespec" % "0.9.0" % "test" exclude("org.mockito", "mockito-all") force()
   )
 }
 
