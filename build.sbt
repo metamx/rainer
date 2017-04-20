@@ -41,9 +41,9 @@ releaseSettings
 
 ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
-// Target Java 7
-scalacOptions += "-target:jvm-1.7"
-javacOptions in compile ++= Seq("-source", "1.7", "-target", "1.7")
+// Target Java 8
+scalacOptions += "-target:jvm-1.8"
+javacOptions in compile ++= Seq("-source", "1.8", "-target", "1.8")
 
 val curatorVersion = "2.11.1"
 
