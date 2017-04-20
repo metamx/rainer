@@ -17,20 +17,19 @@
 
 package com.metamx.rainer.test
 
+import com.github.nscala_time.time.Imports._
 import com.metamx.common.scala.Jackson
 import com.metamx.common.scala.Predef._
 import com.metamx.common.scala.timekeeper.Timekeeper
 import com.metamx.common.scala.untyped.Dict
+import com.metamx.rainer._
 import com.metamx.rainer.http.{RainerMirrorServlet, RainerServlet}
-import com.metamx.rainer.test.helper.{RainerTests, TestPayload, DerbyCommitTable, DerbyMemoryDB}
-import com.metamx.rainer.{Commit, CommitStorage, CommitKeeper, KeyValueDeserialization, DbCommitStorage}
-import com.simple.simplespec.{Matchers, Spec}
-import com.twitter.finagle.InetResolver
-import com.twitter.util.{Await, Witness, Var}
+import com.metamx.rainer.test.helper.{DerbyCommitTable, DerbyMemoryDB, RainerTests, TestPayload}
+import com.simple.simplespec.Matchers
+import com.twitter.util.{Await, Var, Witness}
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Test
-import org.scala_tools.time.Imports._
 import org.scalatra.test.ScalatraTests
 
 object ServletTest extends RainerTests

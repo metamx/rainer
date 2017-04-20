@@ -17,9 +17,9 @@
 
 package com.metamx.rainer.test.helper
 
-import com.metamx.common.scala.db.{DBConfig, DB}
+import com.github.nscala_time.time.Imports._
+import com.metamx.common.scala.db.{DB, DBConfig}
 import com.metamx.rainer.DbCommitStorageMixin
-import org.scala_tools.time.Imports._
 
 abstract class DerbyMemoryDB(name: String) extends DB(DerbyMemoryDB.config(name)) with DbCommitStorageMixin
 {
