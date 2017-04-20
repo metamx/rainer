@@ -41,7 +41,11 @@ releaseSettings
 
 ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
-val curatorVersion = "2.10.0"
+// Target Java 7
+scalacOptions += "-target:jvm-1.7"
+javacOptions in compile ++= Seq("-source", "1.7", "-target", "1.7")
+
+val curatorVersion = "2.11.1"
 
 libraryDependencies ++= Seq(
   "com.metamx" %% "scala-util" % "1.13.2",
